@@ -38,18 +38,29 @@ const rays = Array.from({ length: 28 }, (_, i) => {
 <script>
   import { reducedMotion } from '../scripts/clock';
 
-  // Le chrono de cette section est le même que celui du menu : il descend au fil du scroll.
-  // Quand il atteint 0.0, le Header émet clock:zero et l'impact frame se joue.
+  // Souris : l'impact frame se joue quand le pointeur entre dans la section (ou au focus clavier).
+  // Tactile : quand le chrono atteint 0.0 (événement clock:zero émis par le Header).
   const el = document.querySelector<HTMLElement>('[data-buzzer]');
+  let last = 0;
 
   const impact = () => {
-    if (!el || reducedMotion()) return;
+    // Pause de 1,5 s entre deux impacts : jamais plus d'un flash à la suite
+    if (!el || reducedMotion() || el.classList.contains('is-impact') || Date.now() - last < 1500) return;
+    last = Date.now();
     el.classList.add('is-impact');
     setTimeout(() => el.classList.remove('is-impact'), 400);
   };
 
-  if (document.documentElement.dataset.clockZero) impact();
-  else document.addEventListener('clock:zero', impact, { once: true });
+  if (el && matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    el.addEventListener('pointerenter', (e) => e.pointerType === 'mouse' && impact());
+    el.addEventListener('focusin', (e) => {
+      if (!el.contains(e.relatedTarget as Node)) impact();
+    });
+  } else if (document.documentElement.dataset.clockZero) {
+    impact();
+  } else {
+    document.addEventListener('clock:zero', impact, { once: true });
+  }
 </script>
 
 <style>
