@@ -90,8 +90,6 @@ const isCurrent = (href: string) => current.startsWith(url(href));
   const buttons = document.querySelectorAll('[data-clock-btn]');
   let last = '';
   let ticking = false;
-  let zeroFired = false;
-  let scrolled = false;
 
   // Fin de possession : bas de page, ou l'élément data-clock-end (le buzzer) aux 60 % de l'écran
   const maxScroll = () => {
@@ -114,14 +112,6 @@ const isCurrent = (href: string) => current.startsWith(url(href));
     if (text === last) return;
     last = text;
     clocks.forEach((c) => setClock(c, text));
-    // Fin de possession : le buzzer écoute cet événement. Seulement si c'est le scroll du visiteur
-    // qui amène le chrono à 0.0 (pas une position restaurée au chargement). Réarmé au-dessus de 1 s.
-    if (text === '0.0' && !zeroFired && scrolled) {
-      zeroFired = true;
-      document.dispatchEvent(new CustomEvent('clock:zero'));
-    } else if (parseFloat(text) > 1) {
-      zeroFired = false;
-    }
     const label = `Sommaire de la page. Lecture : ${Math.round(p * 100)} %`;
     buttons.forEach((b) => b.setAttribute('aria-label', label));
   }
@@ -133,12 +123,7 @@ const isCurrent = (href: string) => current.startsWith(url(href));
     }
   };
 
-  // Le premier rendu (et la restauration de scroll du navigateur) ne compte pas comme une action du visiteur
   update();
-  const markScrolled = () => (scrolled = true);
-  ['wheel', 'touchmove', 'keydown', 'pointerdown'].forEach((t) =>
-    addEventListener(t, markScrolled, { passive: true, once: true }),
-  );
   addEventListener('scroll', request, { passive: true });
   addEventListener('resize', request, { passive: true });
 

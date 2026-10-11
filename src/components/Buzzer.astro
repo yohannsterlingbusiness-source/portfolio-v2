@@ -1,5 +1,6 @@
----
-// Moment mémorable : quand le chrono atteint 0.0, une impact frame façon anime de sport (une fois par session).
+﻿---
+// Moment mémorable : le chrono arrive à 0.0 sur cette section, et le survol déclenche une impact frame
+// façon anime de sport. Pur CSS : activée à l'entrée de la souris, estompée à sa sortie.
 import ShotClock from './ShotClock.astro';
 import ContactButton from './ContactButton.astro';
 import { site } from '../data/site';
@@ -35,36 +36,6 @@ const rays = Array.from({ length: 28 }, (_, i) => {
   </div>
 </section>
 
-<script>
-  import { reducedMotion } from '../scripts/clock';
-
-  // L'impact frame se déclenche quand le chrono atteint 0.0 (événement clock:zero émis par le Header).
-  // Souris : il reste figé tant que le pointeur est dans la section et s'estompe à sa sortie.
-  // Tactile : il s'estompe après 400 ms.
-  const el = document.querySelector<HTMLElement>('[data-buzzer]');
-  const mouse = matchMedia('(hover: hover) and (pointer: fine)').matches;
-
-  if (el) {
-    let minUntil = 0;
-
-    const release = () => {
-      const wait = minUntil - Date.now();
-      if (wait > 0) return setTimeout(release, wait);
-      if (mouse && el.matches(':hover')) return;
-      el.classList.remove('is-impact');
-    };
-
-    document.addEventListener('clock:zero', () => {
-      if (reducedMotion() || el.classList.contains('is-impact')) return;
-      minUntil = Date.now() + 400;
-      el.classList.add('is-impact');
-      setTimeout(release, 400);
-    });
-
-    el.addEventListener('pointerleave', () => el.classList.contains('is-impact') && release());
-  }
-</script>
-
 <style>
   .buzzer {
     position: relative;
@@ -73,6 +44,7 @@ const rays = Array.from({ length: 28 }, (_, i) => {
     border-top: 1px solid var(--c-ligne);
     text-align: center;
     isolation: isolate;
+    transition: background-color 350ms var(--ease-out), color 350ms var(--ease-out);
   }
 
   .buzzer-inner {
@@ -112,6 +84,11 @@ const rays = Array.from({ length: 28 }, (_, i) => {
     overflow-wrap: anywhere;
   }
 
+  .buzzer-title,
+  .buzzer-clock {
+    transition: transform 350ms var(--ease-out), box-shadow 350ms var(--ease-out);
+  }
+
   .rays {
     position: absolute;
     inset: 0;
@@ -120,50 +97,38 @@ const rays = Array.from({ length: 28 }, (_, i) => {
     height: 100%;
     stroke: var(--c-nuit);
     opacity: 0;
+    transform: scale(1.15);
+    transition: opacity 350ms var(--ease-out), transform 350ms var(--ease-out);
   }
 
-  /* Impact frame : image figée en fort contraste, lignes de vitesse, une seule fois, sans clignotement */
-  .buzzer.is-impact {
-    background: var(--c-craie);
-    color: var(--c-nuit);
-  }
-
-  .buzzer.is-impact .rays {
-    opacity: 1;
-    animation: rays-in 400ms steps(2, end) both;
-  }
-
-  .buzzer.is-impact .buzzer-title {
-    transform: scale(1.08) rotate(-2deg);
-  }
-
-  .buzzer.is-impact .buzzer-clock {
-    transform: scale(1.12) rotate(3deg);
-    box-shadow: 0 0 0 6px var(--c-nuit);
-  }
-
-  .buzzer-title,
-  .buzzer-clock {
-    transition: transform 300ms var(--ease-out);
-  }
-
-  .buzzer {
-    transition: background-color 300ms var(--ease-out), color 300ms var(--ease-out);
-  }
-
-  /* Entrée sèche (coupe franche), sortie en douceur */
-  .buzzer.is-impact,
-  .buzzer.is-impact .buzzer-title,
-  .buzzer.is-impact .buzzer-clock {
-    transition: none;
-  }
-
-  @keyframes rays-in {
-    from {
-      transform: scale(1.15);
+  /* Impact frame au survol : fort contraste, lignes de vitesse, titre secoué. Entrée rapide, sortie douce. */
+  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+    .buzzer:hover {
+      background: var(--c-craie);
+      color: var(--c-nuit);
+      transition-duration: 160ms;
     }
-    to {
+
+    .buzzer:hover .rays {
+      opacity: 1;
       transform: scale(1);
+      transition-duration: 160ms;
+    }
+
+    .buzzer:hover .buzzer-title {
+      transform: scale(1.06) rotate(-2deg);
+      transition-duration: 160ms;
+    }
+
+    .buzzer:hover .buzzer-clock {
+      transform: scale(1.1) rotate(3deg);
+      box-shadow: 0 0 0 6px var(--c-nuit);
+      transition-duration: 160ms;
+    }
+
+    .buzzer:hover :focus-visible {
+      outline-color: var(--c-nuit);
     }
   }
 </style>
+
