@@ -1,0 +1,182 @@
+---
+// Roster : une ligne par projet (tient de 3 à 8 sans retouche).
+// Desktop : la fiche du projet survolé s'affiche dans une colonne fixe, sans décaler la page.
+// Mobile et tablette : la fiche est affichée sous chaque ligne.
+import { getCollection } from 'astro:content';
+import ProjectCard from './ProjectCard.astro';
+import { url } from '../lib/url';
+
+const projects = (await getCollection('projets')).sort(
+  (a, b) => Number(a.data.pinned) - Number(b.data.pinned) || a.data.order - b.data.order,
+);
+const isPh = (v: string) => v.startsWith('[');
+---
+
+<div class="roster" data-roster>
+  <ol role="list" class="rows">
+    {
+      projects.map((p, i) => (
+        <li class="row-item">
+          <a class="row" href={url(`projets/${p.id}/`)} data-roster-row={p.id}>
+            <span class="row-num display">{p.data.number}</span>
+            <span class="row-main">
+              <span class:list={['row-title', { 'placeholder-text': isPh(p.data.title) }]}>
+                {p.data.pinned ? p.data.title : `Projet ${p.data.number} · ${p.data.title}`}
+              </span>
+              <span class="row-meta">
+                {p.data.client} · {p.data.type} · {p.data.year}
+              </span>
+            </span>
+            <span class="row-arrow" aria-hidden="true">→</span>
+          </a>
+          <div class="row-card">
+            <ProjectCard project={p} compact />
+          </div>
+        </li>
+      ))
+    }
+  </ol>
+
+  <div class="preview" aria-hidden="true">
+    <div class="preview-stack">
+      {
+        projects.map((p, i) => (
+          <div class="preview-card" data-preview={p.id} data-active={i === 0 ? '' : undefined} inert>
+            <ProjectCard project={p} />
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('[data-roster]').forEach((roster) => {
+    const cards = roster.querySelectorAll<HTMLElement>('[data-preview]');
+    const show = (id?: string) =>
+      cards.forEach((c) => c.toggleAttribute('data-active', c.dataset.preview === id));
+    roster.querySelectorAll<HTMLElement>('[data-roster-row]').forEach((row) => {
+      const id = row.dataset.rosterRow;
+      row.addEventListener('pointerenter', () => show(id));
+      row.addEventListener('focus', () => show(id));
+    });
+  });
+</script>
+
+<style>
+  .roster {
+    display: grid;
+    gap: var(--gutter);
+  }
+
+  .rows {
+    border-top: 1px solid var(--c-ligne);
+  }
+
+  .row-item {
+    border-bottom: 1px solid var(--c-ligne);
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: var(--s-5);
+    padding-block: var(--s-5);
+    text-decoration: none;
+  }
+
+  .row-num {
+    min-width: 2ch;
+    font-size: var(--fs-4);
+    color: var(--c-parquet);
+    transition: color var(--t-hover) var(--ease-out);
+  }
+
+  .row-main {
+    display: grid;
+    gap: var(--s-1);
+  }
+
+  .row-title {
+    font-family: var(--f-display);
+    font-weight: 800;
+    font-size: var(--fs-3);
+    line-height: var(--lh-title);
+    text-transform: uppercase;
+  }
+
+  .row-title.placeholder-text {
+    font-style: normal;
+  }
+
+  .row-meta {
+    font-size: var(--fs--1);
+    color: var(--c-parquet);
+  }
+
+  .row-arrow {
+    font-size: var(--fs-2);
+    transition: transform var(--t-base) var(--ease-cross);
+  }
+
+  .row:hover .row-num,
+  .row:focus-visible .row-num {
+    color: var(--c-led);
+  }
+
+  .row:hover .row-arrow,
+  .row:focus-visible .row-arrow {
+    transform: translateX(8px);
+  }
+
+  .row-card {
+    padding-bottom: var(--s-5);
+  }
+
+  .preview {
+    display: none;
+  }
+
+  @media (min-width: 1024px) {
+    .roster {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      align-items: start;
+    }
+
+    .rows {
+      grid-column: 1 / span 7;
+    }
+
+    .row-card {
+      display: none;
+    }
+
+    .preview {
+      display: block;
+      grid-column: 8 / span 5;
+      position: sticky;
+      top: calc(var(--header-h) + var(--s-6));
+    }
+
+    .preview-stack {
+      display: grid;
+    }
+
+    .preview-card {
+      grid-area: 1 / 1;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(12px);
+      transition: opacity var(--t-base) var(--ease-out), transform var(--t-base) var(--ease-cross),
+        visibility 0s linear var(--t-base);
+    }
+
+    .preview-card[data-active] {
+      opacity: 1;
+      visibility: visible;
+      transform: none;
+      transition-delay: 0s;
+    }
+  }
+</style>

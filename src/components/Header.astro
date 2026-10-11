@@ -1,0 +1,407 @@
+---
+import ShotClock from './ShotClock.astro';
+import ContactButton from './ContactButton.astro';
+import { nav, site } from '../data/site';
+import { url } from '../lib/url';
+
+const current = Astro.url.pathname;
+const isCurrent = (href: string) => current.startsWith(url(href));
+---
+
+<header class="site-header">
+  <div class="wrap bar">
+    <a class="brand" href={url()} aria-label={`${site.name}, accueil`}>
+      <span class="brand-full">{site.name}</span>
+      <span class="brand-short" aria-hidden="true">{site.shortName}</span>
+    </a>
+
+    <nav class="nav-desktop" aria-label="Navigation principale">
+      <ul role="list">
+        {
+          nav.map((item) => (
+            <li>
+              <a href={url(item.href)} aria-current={isCurrent(item.href) ? 'page' : undefined}>
+                <span class="roll">
+                  <span>{item.label}</span>
+                  <span aria-hidden="true">{item.label}</span>
+                </span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="bar-end">
+      <button class="clock-btn clock-btn--header" popovertarget="sommaire" data-clock-btn aria-label="Sommaire de la page">
+        <ShotClock name="progress" />
+      </button>
+      <ContactButton class="header-contact" />
+      <button class="menu-btn" popovertarget="menu" aria-haspopup="dialog">
+        <span class="roll"><span>Menu</span><span aria-hidden="true">Menu</span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div id="sommaire" popover class="sommaire" role="dialog" aria-label="Sommaire de la page">
+  <p class="label">Sommaire · temps restant</p>
+  <ol role="list" data-sommaire></ol>
+</div>
+
+<div id="menu" popover class="menu-panel" role="dialog" aria-label="Menu">
+  <div class="wrap menu-inner">
+    <div class="menu-top">
+      <span class="label">Menu</span>
+      <button class="menu-close" popovertarget="menu" popovertargetaction="hide">Fermer</button>
+    </div>
+    <nav aria-label="Navigation principale (mobile)">
+      <ol role="list" class="menu-list">
+        <li><a href={url()} aria-current={current === url() ? 'page' : undefined}><span class="menu-n">00</span>Accueil</a></li>
+        {
+          nav.map((item, i) => (
+            <li>
+              <a href={url(item.href)} aria-current={isCurrent(item.href) ? 'page' : undefined}>
+                <span class="menu-n">{String(i + 1).padStart(2, '0')}</span>
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+        <li><a href={url('contact/')}><span class="menu-n">04</span>Contact</a></li>
+      </ol>
+    </nav>
+    <p class="menu-mail"><span class="label">En direct</span><br />{site.email}</p>
+  </div>
+</div>
+
+<div class="dock">
+  <button class="clock-btn" popovertarget="sommaire" data-clock-btn aria-label="Sommaire de la page">
+    <ShotClock name="progress" />
+  </button>
+  <ContactButton />
+</div>
+
+<script>
+  import { setClock } from '../scripts/clock';
+  import { formatClock } from '../lib/segments';
+
+  const clocks = document.querySelectorAll('[data-clock="progress"]');
+  const buttons = document.querySelectorAll('[data-clock-btn]');
+  let last = '';
+  let ticking = false;
+
+  // Fin de possession : bas de page, ou l'élément data-clock-end (le buzzer) aux 60 % de l'écran
+  const maxScroll = () => {
+    const docMax = document.documentElement.scrollHeight - innerHeight;
+    const end = document.querySelector('[data-clock-end]');
+    if (!end) return docMax;
+    return Math.min(docMax, end.getBoundingClientRect().top + scrollY - innerHeight * 0.4);
+  };
+
+  const progress = () => {
+    const max = maxScroll();
+    return max > 0 ? Math.min(1, Math.max(0, scrollY / max)) : 0;
+  };
+
+  // Le chrono descend de 24 à 0 au fil de la lecture
+  function update() {
+    ticking = false;
+    const p = progress();
+    const text = formatClock(24 * (1 - p));
+    if (text === last) return;
+    last = text;
+    clocks.forEach((c) => setClock(c, text));
+    const label = `Sommaire de la page. Lecture : ${Math.round(p * 100)} %`;
+    buttons.forEach((b) => b.setAttribute('aria-label', label));
+  }
+
+  const request = () => {
+    if (!ticking) {
+      ticking = true;
+      requestAnimationFrame(update);
+    }
+  };
+
+  addEventListener('scroll', request, { passive: true });
+  addEventListener('resize', request, { passive: true });
+  update();
+
+  // Sommaire : sections marquées data-section, avec le temps restant au début de chacune
+  const sommaire = document.getElementById('sommaire') as HTMLElement & { hidePopover(): void };
+  const list = sommaire.querySelector('[data-sommaire]') as HTMLOListElement;
+
+  sommaire.addEventListener('toggle', (e) => {
+    if ((e as ToggleEvent).newState !== 'open') return;
+    const max = Math.max(1, maxScroll());
+    list.replaceChildren(
+      ...[...document.querySelectorAll<HTMLElement>('[data-section]')].map((el) => {
+        const top = el.getBoundingClientRect().top + scrollY;
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = `#${el.id}`;
+        a.innerHTML = `<span class="sommaire-t">${formatClock(24 * (1 - Math.min(1, top / max)))}</span>`;
+        a.append(el.dataset.section ?? '');
+        a.addEventListener('click', () => sommaire.hidePopover());
+        li.append(a);
+        return li;
+      }),
+    );
+  });
+
+  // Le menu se ferme quand on choisit un lien
+  const menu = document.getElementById('menu') as HTMLElement & { hidePopover(): void };
+  menu.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => menu.hidePopover()));
+</script>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: color-mix(in srgb, var(--c-nuit) 94%, transparent);
+    border-bottom: 1px solid var(--c-ligne);
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  .bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-5);
+    height: var(--header-h);
+  }
+
+  .brand {
+    font-family: var(--f-display);
+    font-weight: 800;
+    font-size: var(--fs-2);
+    line-height: 1;
+    text-transform: uppercase;
+    text-decoration: none;
+    letter-spacing: 0.02em;
+  }
+
+  .brand-short {
+    display: none;
+  }
+
+  .nav-desktop ul {
+    display: flex;
+    gap: var(--s-6);
+  }
+
+  .nav-desktop a {
+    display: inline-block;
+    padding-block: var(--s-3);
+    font-weight: 500;
+    text-decoration: none;
+  }
+
+  .nav-desktop a[aria-current='page'] {
+    color: var(--c-led);
+  }
+
+  .bar-end {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+  }
+
+  .clock-btn {
+    display: inline-flex;
+    align-items: center;
+    min-height: 48px;
+    padding: 0 var(--s-3);
+    border: 1px solid var(--c-ligne);
+    border-radius: 8px;
+    background: #000;
+    font-size: 26px;
+    cursor: pointer;
+    transition: border-color var(--t-hover) var(--ease-out);
+  }
+
+  .clock-btn:hover {
+    border-color: var(--c-parquet);
+  }
+
+  .menu-btn {
+    display: none;
+    min-height: 48px;
+    padding: 0 var(--s-4);
+    border: 1px solid var(--c-craie);
+    border-radius: 999px;
+    background: transparent;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* Sommaire */
+  .sommaire {
+    inset: auto;
+    top: calc(var(--header-h) + var(--s-2));
+    right: var(--margin);
+    margin: 0;
+    width: min(320px, calc(100vw - 2 * var(--margin)));
+    padding: var(--s-5);
+    border: 1px solid var(--c-ligne);
+    border-radius: 12px;
+    background: var(--c-banc);
+    color: var(--c-craie);
+  }
+
+  .sommaire ol {
+    margin-top: var(--s-3);
+  }
+
+  .sommaire :global(a) {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s-4);
+    padding-block: var(--s-2);
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .sommaire :global(a:hover) {
+    color: var(--c-led);
+  }
+
+  .sommaire :global(.sommaire-t) {
+    min-width: 3ch;
+    font-family: var(--f-display);
+    font-weight: 800;
+    color: var(--c-led);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Menu plein écran (mobile et tablette) */
+  .menu-panel {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
+    border: 0;
+    background: var(--c-nuit);
+    color: var(--c-craie);
+  }
+
+  .menu-inner {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    padding-block: var(--s-4) var(--s-7);
+  }
+
+  .menu-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: calc(var(--header-h) - var(--s-4));
+  }
+
+  .menu-close {
+    min-height: 48px;
+    padding: 0 var(--s-4);
+    border: 1px solid var(--c-craie);
+    border-radius: 999px;
+    background: transparent;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .menu-list {
+    margin-top: var(--s-7);
+  }
+
+  .menu-list a {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s-4);
+    padding-block: var(--s-2);
+    font-family: var(--f-display);
+    font-weight: 800;
+    font-size: var(--fs-5);
+    line-height: 1;
+    text-transform: uppercase;
+    text-decoration: none;
+  }
+
+  .menu-list a[aria-current='page'] {
+    color: var(--c-led);
+  }
+
+  .menu-n {
+    font-family: var(--f-text);
+    font-size: var(--fs--1);
+    font-weight: 600;
+    color: var(--c-parquet);
+  }
+
+  .menu-mail {
+    margin-top: auto;
+    padding-top: var(--s-7);
+    overflow-wrap: anywhere;
+  }
+
+  /* Dock bas (mobile) : chrono et contact sous le pouce */
+  .dock {
+    display: none;
+  }
+
+  @media (max-width: 767px) {
+    .nav-desktop,
+    .clock-btn--header,
+    .bar-end :global(.header-contact) {
+      display: none;
+    }
+
+    .menu-btn {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .brand-full {
+      display: none;
+    }
+
+    .brand-short {
+      display: inline;
+    }
+
+    .dock {
+      position: fixed;
+      inset: auto 0 0 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--s-4);
+      min-height: var(--dock-h);
+      padding: var(--s-2) var(--margin) calc(var(--s-2) + env(safe-area-inset-bottom, 0px));
+      background: color-mix(in srgb, var(--c-nuit) 96%, transparent);
+      border-top: 1px solid var(--c-ligne);
+    }
+
+    .sommaire {
+      top: auto;
+      bottom: calc(var(--dock-h) + env(safe-area-inset-bottom, 0px) + var(--s-2));
+      left: var(--margin);
+      right: auto;
+    }
+  }
+
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .nav-desktop {
+      display: none;
+    }
+
+    .menu-btn {
+      display: inline-flex;
+      align-items: center;
+    }
+  }
+</style>

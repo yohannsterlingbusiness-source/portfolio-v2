@@ -1,0 +1,157 @@
+---
+import { nav, site } from '../data/site';
+import { url } from '../lib/url';
+---
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-col">
+        <p class="label">En direct</p>
+        <p class="foot-mail">
+          <a href={`mailto:${site.email}`}>{site.email}</a>
+        </p>
+        <button class="copy-btn" type="button" data-copy={site.email}>
+          <span data-copy-label>Copier l'adresse</span>
+        </button>
+        <span class="sr-only" aria-live="polite" data-copy-status></span>
+      </div>
+
+      <nav class="foot-col" aria-label="Pied de page">
+        <p class="label">Pages</p>
+        <ul role="list">
+          <li><a href={url()}>Accueil</a></li>
+          {nav.map((item) => <li><a href={url(item.href)}>{item.label}</a></li>)}
+          <li><a href={url('contact/')}>Contact</a></li>
+        </ul>
+      </nav>
+
+      <div class="foot-col">
+        <p class="label">Ailleurs</p>
+        <ul role="list">
+          <li><a href={site.linkedin} rel="me noopener" target="_blank">LinkedIn<span class="sr-only"> (nouvel onglet)</span></a></li>
+        </ul>
+      </div>
+
+      <div class="foot-col">
+        <p class="label">Chez moi</p>
+        <p><span data-paris-time>--:--</span> à Paris</p>
+        <p class="placeholder-text">{site.availability}</p>
+      </div>
+    </div>
+
+    <p class="wordmark display" aria-hidden="true">{site.name}</p>
+
+    <div class="foot-legal">
+      <p>© {new Date().getFullYear()} {site.name}</p>
+      <ul role="list">
+        <li><a href={url('mentions-legales/')}>Mentions légales</a></li>
+        <li><a href={url('confidentialite/')}>Confidentialité</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Heure locale de Paris, signe de présence
+  const el = document.querySelector('[data-paris-time]');
+  const fmt = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' });
+  const tick = () => el && (el.textContent = fmt.format(new Date()));
+  tick();
+  setInterval(tick, 30_000);
+
+  // Copier l'email
+  document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach((btn) => {
+    const label = btn.querySelector('[data-copy-label]');
+    const status = btn.parentElement?.querySelector('[data-copy-status]');
+    btn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(btn.dataset.copy ?? '');
+        if (label) label.textContent = 'Adresse copiée';
+        if (status) status.textContent = 'Adresse email copiée';
+        setTimeout(() => label && (label.textContent = "Copier l'adresse"), 2400);
+      } catch {
+        if (label) label.textContent = 'Copie impossible, sélectionnez le texte';
+      }
+    });
+  });
+</script>
+
+<style>
+  .site-footer {
+    padding-block: var(--s-9) var(--s-6);
+    border-top: 1px solid var(--c-ligne);
+  }
+
+  .foot-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    gap: var(--s-7) var(--gutter);
+  }
+
+  .foot-col > * + * {
+    margin-top: var(--s-3);
+  }
+
+  .foot-col ul {
+    display: grid;
+    gap: var(--s-2);
+  }
+
+  .foot-col a {
+    text-decoration: none;
+  }
+
+  .foot-col a:hover {
+    text-decoration: underline;
+  }
+
+  .foot-mail {
+    font-size: var(--fs-1);
+    overflow-wrap: anywhere;
+  }
+
+  .copy-btn {
+    min-height: 44px;
+    padding: 0 var(--s-4);
+    border: 1px solid var(--c-parquet);
+    border-radius: 999px;
+    background: transparent;
+    font-size: var(--fs--1);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .copy-btn:hover {
+    border-color: var(--c-craie);
+  }
+
+  .wordmark {
+    margin-top: var(--s-9);
+    font-size: clamp(3rem, 13.5vw, 15rem);
+    line-height: 0.82;
+    white-space: nowrap;
+    overflow: hidden;
+    color: var(--c-banc);
+    -webkit-text-stroke: 1px var(--c-ligne);
+  }
+
+  .foot-legal {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--s-4);
+    margin-top: var(--s-6);
+    font-size: var(--fs--1);
+    color: var(--c-parquet);
+  }
+
+  .foot-legal ul {
+    display: flex;
+    gap: var(--s-5);
+  }
+
+  .foot-legal a:hover {
+    color: var(--c-craie);
+  }
+</style>

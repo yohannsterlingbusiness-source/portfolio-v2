@@ -1,0 +1,90 @@
+---
+// Curseur balle : suit le pointeur sans retard, fait un crossover sec sur les éléments interactifs.
+// Uniquement souris (pointer: fine), désactivé en mouvement réduit et en économie de données.
+---
+
+<div class="cursor" aria-hidden="true" hidden><span class="cursor-dot"></span></div>
+
+<script>
+  import { reducedMotion, lowData } from '../scripts/clock';
+
+  const root = document.documentElement;
+  const cursor = document.querySelector<HTMLElement>('.cursor');
+  const dot = cursor?.querySelector<HTMLElement>('.cursor-dot');
+  const fine = matchMedia('(pointer: fine) and (hover: hover)').matches;
+
+  if (cursor && dot && fine && !reducedMotion() && !lowData()) {
+    const INTERACTIVE = 'a, button, [role="button"], summary, label, select';
+    const TEXT = 'input, textarea, [contenteditable="true"]';
+    let current: Element | null = null;
+
+    cursor.hidden = false;
+    root.classList.add('has-cursor');
+
+    addEventListener(
+      'pointermove',
+      (e) => {
+        if (e.pointerType !== 'mouse') return;
+        cursor.style.transform = `translate3d(${e.clientX}px, ${e.clientY}px, 0)`;
+        const target = (e.target as Element).closest?.(`${INTERACTIVE}, ${TEXT}`) ?? null;
+        if (target === current) return;
+        current = target;
+        const isText = !!target?.matches(TEXT);
+        cursor.classList.toggle('is-text', isText);
+        cursor.classList.toggle('is-hover', !!target && !isText);
+        if (target && !isText) {
+          // Crossover : changement de direction sec gauche droite
+          dot.animate(
+            [{ translate: '0 0' }, { translate: '-9px 0', offset: 0.35 }, { translate: '7px 0', offset: 0.7 }, { translate: '0 0' }],
+            { duration: 180, easing: 'cubic-bezier(.7,0,.2,1)' },
+          );
+        }
+      },
+      { passive: true },
+    );
+
+    document.addEventListener('pointerleave', () => cursor.classList.add('is-out'));
+    document.addEventListener('pointerenter', () => cursor.classList.remove('is-out'));
+  }
+</script>
+
+<style>
+  .cursor {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 300;
+    pointer-events: none;
+    will-change: transform;
+  }
+
+  .cursor-dot {
+    display: block;
+    width: 12px;
+    height: 12px;
+    margin: -6px 0 0 -6px;
+    border-radius: 50%;
+    background: var(--c-led);
+    transition: scale var(--t-hover) var(--ease-out), background-color var(--t-hover) var(--ease-out),
+      opacity var(--t-hover) linear;
+  }
+
+  .cursor.is-hover .cursor-dot {
+    scale: 2.4;
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--c-led);
+  }
+
+  .cursor.is-text .cursor-dot,
+  .cursor.is-out .cursor-dot {
+    opacity: 0;
+  }
+
+  :global(html.has-cursor),
+  :global(html.has-cursor a),
+  :global(html.has-cursor button),
+  :global(html.has-cursor summary),
+  :global(html.has-cursor label) {
+    cursor: none;
+  }
+</style>

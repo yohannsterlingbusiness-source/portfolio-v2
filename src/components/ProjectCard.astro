@@ -1,0 +1,101 @@
+---
+// Fiche joueur : maillot, nom, poste, et la box score avec les résultats réels du projet.
+import type { CollectionEntry } from 'astro:content';
+import ProjectVisual from './ProjectVisual.astro';
+
+interface Props {
+  project: CollectionEntry<'projets'>;
+  /** Sans en-tête, quand le nom du projet est déjà affiché juste au-dessus. */
+  compact?: boolean;
+}
+
+const { project, compact = false } = Astro.props;
+const { data } = project;
+const isPh = (v: string) => v.startsWith('[');
+---
+
+<article class="card">
+  <ProjectVisual angle={data.visual.angle} zone={data.visual.zone} number={data.number} placeholder={data.placeholder} />
+  <div class="card-head" hidden={compact}>
+    <span class="card-num display" aria-hidden="true">{data.number}</span>
+    <div>
+      <p class="label">{data.client} · <span class:list={{ 'placeholder-text': isPh(data.type) }}>{data.type}</span></p>
+      <h3 class="card-title" class:list={{ 'placeholder-text': isPh(data.title) }}>{data.title}</h3>
+    </div>
+  </div>
+  <dl class="box">
+    {
+      data.stats.map((s) => (
+        <div class="box-cell">
+          <dt class="label">{s.label}</dt>
+          <dd class:list={['box-val', { 'is-ph': isPh(s.value) }]}>{s.value}</dd>
+        </div>
+      ))
+    }
+  </dl>
+</article>
+
+<style>
+  .card {
+    display: grid;
+    gap: var(--s-5);
+    padding: var(--s-4);
+    border: 1px solid var(--c-ligne);
+    border-radius: 10px;
+    background: linear-gradient(180deg, var(--c-banc), var(--c-nuit));
+    container-type: inline-size;
+  }
+
+  .card-head {
+    display: flex;
+    align-items: center;
+    gap: var(--s-4);
+  }
+
+  .card-num {
+    font-size: var(--fs-5);
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--c-led);
+  }
+
+  .card-title {
+    font-family: var(--f-display);
+    font-weight: 800;
+    font-size: var(--fs-2);
+    line-height: var(--lh-title);
+    text-transform: uppercase;
+  }
+
+  .box {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border-top: 1px solid var(--c-ligne);
+  }
+
+  @container (min-width: 560px) {
+    .box {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .box-cell {
+    padding: var(--s-3) var(--s-2) 0 0;
+  }
+
+  .box-val {
+    font-family: var(--f-display);
+    font-weight: 800;
+    font-size: var(--fs-2);
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+  }
+
+  .box-val.is-ph {
+    font-family: var(--f-text);
+    font-weight: 500;
+    font-size: var(--fs--1);
+    font-style: italic;
+    color: var(--c-parquet);
+    padding-top: var(--s-2);
+  }
+</style>

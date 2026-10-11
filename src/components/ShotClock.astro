@@ -1,0 +1,65 @@
+---
+import { SEGS, GLYPHS, segmentPoints, parseDisplay, DIGIT_W, DIGIT_H, DIGIT_GAP } from '../lib/segments';
+
+interface Props {
+  value?: string;
+  slots?: number;
+  class?: string;
+  /** Attribut data-clock pour cibler l'afficheur depuis un script. */
+  name?: string;
+}
+
+const { value = '24', slots = 2, class: className = '', name } = Astro.props;
+const cells = parseDisplay(value, slots);
+const width = slots * DIGIT_W + (slots - 1) * DIGIT_GAP + 14;
+---
+
+<svg
+  class:list={['clock', className]}
+  viewBox={`-6 -6 ${width + 12} ${DIGIT_H + 12}`}
+  aria-hidden="true"
+  focusable="false"
+  data-clock={name}
+>
+  <g transform="skewX(-6) translate(10 0)">
+    {
+      cells.map((cell, i) => (
+        <g data-digit transform={`translate(${i * (DIGIT_W + DIGIT_GAP)} 0)`}>
+          {SEGS.map((s) => (
+            <polygon
+              class:list={['seg', { on: GLYPHS[cell.ch]?.includes(s) }]}
+              data-s={s}
+              points={segmentPoints(s)}
+            />
+          ))}
+          <circle class:list={['seg', { on: cell.dot }]} data-dot cx={DIGIT_W + 10} cy={DIGIT_H - 5} r="6" />
+        </g>
+      ))
+    }
+  </g>
+</svg>
+
+<style>
+  .clock {
+    height: 1em;
+    width: auto;
+    overflow: visible;
+  }
+
+  .clock :global(.seg) {
+    fill: var(--c-led-off);
+  }
+
+  .clock :global(.seg.on) {
+    fill: var(--c-led);
+  }
+
+  @media (forced-colors: active) {
+    .clock :global(.seg) {
+      fill: Canvas;
+    }
+    .clock :global(.seg.on) {
+      fill: CanvasText;
+    }
+  }
+</style>

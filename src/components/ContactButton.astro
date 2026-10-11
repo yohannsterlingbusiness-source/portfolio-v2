@@ -1,0 +1,106 @@
+---
+import { url } from '../lib/url';
+
+interface Props {
+  label?: string;
+  class?: string;
+}
+
+const { label = 'Contact', class: className = '' } = Astro.props;
+---
+
+<a href={url('contact/')} class:list={['btn btn--led contact-btn', className]}>
+  <span class="roll"><span>{label}</span><span aria-hidden="true">{label}</span></span>
+  <svg class="hoop" viewBox="0 0 28 32" aria-hidden="true" focusable="false">
+    <circle class="hoop-ball" cx="14" cy="-6" r="4.5"></circle>
+    <g class="hoop-net">
+      <path d="M3.5 6 L7 24 M8.5 6.8 L10 24 M14 7 L14 24 M19.5 6.8 L18 24 M24.5 6 L21 24 M4.5 11 Q14 14 23.5 11 M6 17 Q14 19.5 22 17 M7 24 Q14 25.5 21 24"></path>
+    </g>
+    <ellipse class="hoop-rim" cx="14" cy="5.5" rx="11" ry="2.6"></ellipse>
+  </svg>
+</a>
+
+<style>
+  .contact-btn {
+    padding-inline: var(--s-5) var(--s-4);
+  }
+
+  .hoop {
+    width: 22px;
+    height: 26px;
+    overflow: visible;
+  }
+
+  .hoop-rim {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+  }
+
+  .hoop-net path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.2;
+    stroke-linecap: round;
+  }
+
+  .hoop-net {
+    transform-box: fill-box;
+    transform-origin: 50% 0;
+  }
+
+  .hoop-ball {
+    fill: currentColor;
+    opacity: 0;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .contact-btn:hover .hoop-net,
+    .contact-btn:focus-visible .hoop-net {
+      animation: net-swish var(--t-net) var(--ease-net) 140ms both;
+    }
+
+    .contact-btn:hover .hoop-ball,
+    .contact-btn:focus-visible .hoop-ball {
+      animation: ball-drop 320ms var(--ease-fall) both;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .contact-btn:hover,
+    .contact-btn:focus-visible {
+      --btn-bg: var(--c-craie);
+      border-color: var(--c-craie);
+    }
+  }
+
+  /* Le filet s'étire au passage de la balle puis revient en ondulant */
+  @keyframes net-swish {
+    0% {
+      transform: scale(1, 1) skewX(0);
+    }
+    30% {
+      transform: scale(0.86, 1.28) skewX(4deg);
+    }
+    55% {
+      transform: scale(1.04, 0.92) skewX(-3deg);
+    }
+    100% {
+      transform: scale(1, 1) skewX(0);
+    }
+  }
+
+  @keyframes ball-drop {
+    0% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    80% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(34px);
+    }
+  }
+</style>

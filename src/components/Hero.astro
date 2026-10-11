@@ -1,0 +1,172 @@
+---
+import ShotClock from './ShotClock.astro';
+import ContactButton from './ContactButton.astro';
+import { site } from '../data/site';
+import { url } from '../lib/url';
+---
+
+<section class="hero wrap" id="debut" data-section="Début" aria-labelledby="hero-title">
+  <div class="hero-text">
+    <p class="label">{site.role} · {site.location}</p>
+    <h1 id="hero-title" class="display hero-title">Le site que vos concurrents vont copier.</h1>
+    <p class="lead">
+      Je suis {site.name}, développeur web. Je crée et refonds les sites des entreprises et des particuliers&nbsp;: clairs en
+      3&nbsp;secondes, rapides partout.
+    </p>
+    <div class="hero-actions">
+      <a class="btn btn--ghost" href={url('projets/')}>
+        <span class="roll"><span>Voir les projets</span><span aria-hidden="true">Voir les projets</span></span>
+      </a>
+      <ContactButton label="Me contacter" />
+    </div>
+    <p class="hero-status"><span class="dot" aria-hidden="true"></span><span class="placeholder-text">{site.availability}</span></p>
+  </div>
+
+  <figure class="hero-clock">
+    <div class="hero-clock-frame">
+      <ShotClock name="hero" class="hero-clock-svg" />
+    </div>
+    <figcaption class="label">
+      24 secondes, une possession. Le chrono <span class="hide-mobile">du menu</span><span class="show-mobile">en bas</span> suit votre lecture.
+    </figcaption>
+  </figure>
+</section>
+
+<script>
+  import { setClock, reducedMotion, lowData } from '../scripts/clock';
+
+  // Loader : le chrono se remet à 24 comme un vrai shot clock (une fois par session)
+  const svg = document.querySelector('[data-clock="hero"]');
+  let seen = false;
+  try {
+    seen = sessionStorage.getItem('ys-reset') === '1';
+    sessionStorage.setItem('ys-reset', '1');
+  } catch {}
+
+  if (svg && !seen && !reducedMotion() && !lowData()) {
+    const steps: [number, string][] = [
+      [0, '  '],
+      [110, '88'],
+      [230, '  '],
+      [330, '--'],
+      [470, '24'],
+    ];
+    steps.forEach(([t, v]) => setTimeout(() => setClock(svg, v), t));
+    setTimeout(() => {
+      svg.animate([{ transform: 'scale(1.06)' }, { transform: 'scale(1)' }], {
+        duration: 230,
+        easing: 'cubic-bezier(.2,.8,.2,1)',
+      });
+    }, 470);
+  }
+</script>
+
+<style>
+  .hero {
+    display: grid;
+    gap: var(--s-7) var(--gutter);
+    padding-block: clamp(48px, 8vw, 128px) var(--section-pad);
+  }
+
+  .hero-text {
+    display: grid;
+    gap: var(--s-5);
+    align-content: start;
+  }
+
+  .hero-title {
+    font-size: var(--fs-6);
+    max-width: 11ch;
+    text-wrap: balance;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-3);
+    margin-top: var(--s-2);
+  }
+
+  .hero-status {
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    font-size: var(--fs--1);
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--c-led);
+  }
+
+  .hero-clock {
+    margin: 0;
+    display: grid;
+    gap: var(--s-3);
+    align-content: start;
+    order: -1;
+  }
+
+  .hero-clock-frame {
+    display: inline-flex;
+    justify-self: start;
+    padding: 0.12em 0.2em;
+    border: 1px solid var(--c-ligne);
+    border-radius: 14px;
+    background: #000;
+    font-size: clamp(64px, 22vw, 120px);
+    box-shadow: 0 0 80px -30px var(--c-led);
+  }
+
+  .hero-clock :global(.hero-clock-svg) {
+    transform-origin: 50% 50%;
+  }
+
+  .hero-clock figcaption {
+    max-width: 30ch;
+  }
+
+  .show-mobile {
+    display: none;
+  }
+
+  @media (max-width: 767px) {
+    .hide-mobile {
+      display: none;
+    }
+    .show-mobile {
+      display: inline;
+    }
+  }
+
+  @media (max-width: 359px) {
+    .hero-title {
+      font-size: var(--fs-5);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .hero {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      align-items: end;
+    }
+
+    .hero-text {
+      grid-column: 1 / span 8;
+    }
+
+    .hero-clock {
+      grid-column: 9 / span 4;
+      order: 0;
+      justify-items: end;
+      text-align: right;
+    }
+
+    .hero-clock-frame {
+      justify-self: end;
+      font-size: clamp(120px, 12vw, 220px);
+    }
+  }
+</style>

@@ -1,0 +1,112 @@
+---
+import '../styles/global.css';
+import Seo from '../components/Seo.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import Cursor from '../components/Cursor.astro';
+import { site } from '../data/site';
+import displayFont from '@fontsource-variable/big-shoulders-display/files/big-shoulders-display-latin-wght-normal.woff2?url';
+import textFont from '@fontsource-variable/instrument-sans/files/instrument-sans-latin-wght-normal.woff2?url';
+
+interface Props {
+  title?: string;
+  description?: string;
+  noindex?: boolean;
+}
+
+const { title, description, noindex } = Astro.props;
+
+// Titres : font-display optional, aucun décalage de mise en page.
+// Texte : swap, avec une police de repli calibrée pour limiter le CLS.
+const fontCss = `
+@font-face{font-family:'Big Shoulders Display';src:url(${displayFont}) format('woff2');font-weight:100 900;font-display:optional;}
+@font-face{font-family:'Instrument Sans';src:url(${textFont}) format('woff2');font-weight:400 700;font-display:swap;}
+@font-face{font-family:'Display Fallback';src:local('Arial Narrow'),local('Arial');size-adjust:78%;ascent-override:110%;}
+@font-face{font-family:'Text Fallback';src:local('Arial');size-adjust:97%;ascent-override:96%;descent-override:25%;}
+`;
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <link rel="preload" href={displayFont} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={textFont} as="font" type="font/woff2" crossorigin />
+    <style is:inline set:html={fontCss}></style>
+    <Seo title={title} description={description} noindex={noindex} />
+
+    <script is:inline>
+      // Tir en cloche : la balle part du lien cliqué et la page suivante entre quand elle passe l'arceau.
+      (() => {
+        const KEY = 'ys-shot';
+        addEventListener(
+          'click',
+          (e) => {
+            const a = e.target.closest && e.target.closest('a[href]');
+            if (!a || a.target === '_blank' || a.origin !== location.origin) return;
+            const r = a.getBoundingClientRect();
+            const kb = e.detail === 0;
+            const x = kb ? r.left + r.width / 2 : e.clientX;
+            const y = kb ? r.top + r.height / 2 : e.clientY;
+            try {
+              sessionStorage.setItem(KEY, JSON.stringify({ x, y, t: Date.now() }));
+            } catch {}
+          },
+          true,
+        );
+
+        addEventListener('pagereveal', (e) => {
+          if (!e.viewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+          let s = null;
+          try {
+            s = JSON.parse(sessionStorage.getItem(KEY) || 'null');
+            sessionStorage.removeItem(KEY);
+          } catch {}
+          const fresh = s && Date.now() - s.t < 4000;
+          const vw = innerWidth;
+          const vh = innerHeight;
+          const fx = vw / 2;
+          const fy = vh * 0.32 + 54;
+          const dx = (fresh ? s.x : vw / 2) - fx;
+          const dy = (fresh ? s.y : vh * 0.95) - fy;
+          const r = document.documentElement;
+          r.style.setProperty('--shot-dx', dx + 'px');
+          r.style.setProperty('--shot-dy', dy + 'px');
+          r.style.setProperty('--shot-apex', Math.min(dy, -46) - vh * 0.18 + 'px');
+          r.classList.add('is-shot');
+          e.viewTransition.finished.finally(() => r.classList.remove('is-shot'));
+        });
+      })();
+    </script>
+
+    {
+      site.plausibleDomain && (
+        <script is:inline defer data-domain={site.plausibleDomain} src="https://plausible.io/js/script.js" />
+      )
+    }
+  </head>
+  <body>
+    <a class="skip-link" href="#contenu">Aller au contenu</a>
+    <Header />
+    <main id="contenu" tabindex="-1">
+      <slot />
+    </main>
+    <Footer />
+    <Cursor />
+    <div class="shot-rim" aria-hidden="true"></div>
+    <div class="shot-ball" aria-hidden="true"></div>
+  </body>
+</html>
+
+<style>
+  main:focus {
+    outline: none;
+  }
+
+  @media (max-width: 767px) {
+    body {
+      padding-bottom: calc(var(--dock-h) + env(safe-area-inset-bottom, 0px));
+    }
+  }
+</style>

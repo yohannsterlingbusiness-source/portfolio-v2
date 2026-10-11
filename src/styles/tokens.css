@@ -1,0 +1,67 @@
+:root {
+  /* Couleurs : la salle, la nuit */
+  --c-nuit: #0b0b0c;
+  --c-banc: #151517;
+  --c-ligne: #2a2a2e;
+  --c-craie: #f1ece2;
+  --c-parquet: #8a857c;
+  --c-led: #ff4d2e;
+  --c-led-off: #2b1410;
+
+  /* Typographie */
+  --f-display: 'Big Shoulders Display', 'Display Fallback', 'Arial Narrow', sans-serif;
+  --f-text: 'Instrument Sans', 'Text Fallback', system-ui, sans-serif;
+
+  --fs--1: clamp(0.83rem, 0.8rem + 0.15vw, 0.9rem);
+  --fs-0: clamp(1rem, 0.96rem + 0.2vw, 1.13rem);
+  --fs-1: clamp(1.25rem, 1.15rem + 0.45vw, 1.5rem);
+  --fs-2: clamp(1.56rem, 1.38rem + 0.9vw, 2rem);
+  --fs-3: clamp(1.95rem, 1.6rem + 1.7vw, 2.67rem);
+  --fs-4: clamp(2.44rem, 1.8rem + 3vw, 3.55rem);
+  --fs-5: clamp(3.05rem, 1.9rem + 5.5vw, 6.3rem);
+  --fs-6: clamp(3.8rem, 1rem + 12vw, 11rem);
+
+  --lh-display: 0.9;
+  --lh-title: 1.05;
+  --lh-text: 1.55;
+  --measure: 62ch;
+
+  /* Espacement, base 8 px */
+  --s-1: 0.25rem;
+  --s-2: 0.5rem;
+  --s-3: 0.75rem;
+  --s-4: 1rem;
+  --s-5: 1.5rem;
+  --s-6: 2rem;
+  --s-7: 3rem;
+  --s-8: 4rem;
+  --s-9: 6rem;
+  --s-10: 8rem;
+  --s-11: 12rem;
+
+  /* Grille */
+  --margin: clamp(16px, 5vw, 96px);
+  --gutter: clamp(16px, 2.5vw, 32px);
+  --content-max: 1600px;
+  --section-pad: clamp(64px, 10vw, 192px);
+  --header-h: 72px;
+  --dock-h: 64px;
+
+  /* Mouvement */
+  --t-press: 100ms;
+  --t-hover: 180ms;
+  --t-base: 300ms;
+  --t-shot: 450ms;
+  --t-net: 600ms;
+  --t-reset: 700ms;
+  --t-impact: 400ms;
+
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-rise: cubic-bezier(0.5, 1, 0.89, 1);
+  --ease-fall: cubic-bezier(0.11, 0, 0.5, 0);
+  --ease-cross: cubic-bezier(0.7, 0, 0.2, 1);
+  --ease-net: linear(0, 0.9 18%, 1.08 30%, 0.97 45%, 1.02 60%, 1);
+
+  --focus-ring: 3px solid var(--c-craie);
+}
