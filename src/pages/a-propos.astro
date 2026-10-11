@@ -1,0 +1,276 @@
+---
+import Base from '../layouts/Base.astro';
+import PhotoPlaceholder from '../components/PhotoPlaceholder.astro';
+import ShotChart from '../components/ShotChart.astro';
+import CtaBlock from '../components/CtaBlock.astro';
+import { isPlaceholder as isPh } from '../lib/projects';
+
+const career = [
+  { year: '[Année]', title: 'Ingénieur informatique', place: 'CESI École d’ingénieurs', status: 'Diplômé' },
+  { year: '[Année]', title: 'MBA Big Data & Intelligence Artificielle', place: '[École]', status: 'En cours' },
+];
+
+// Fiche joueur : uniquement des faits, aucune note inventée
+const card = [
+  { k: 'Poste', v: 'Développeur web' },
+  { k: 'Club', v: 'Basket en senior, niveaux départemental et régional' },
+  { k: 'Entraînement', v: 'Salle 5 à 7 fois par semaine' },
+  { k: 'Joueur préféré', v: 'Kyrie Irving' },
+  { k: 'Équipe', v: 'Dallas Mavericks' },
+  { k: 'Manette', v: 'NBA 2K et FIFA sur PS5, en compétitif' },
+  { k: 'Écran', v: 'Football en spectateur, animes de sport' },
+  { k: 'Playlist', v: 'Josman, Drake, R&B, cloud music' },
+];
+
+const traits = ['Calme', 'Drôle', 'Ambitieux', 'Sociable'];
+
+const values = ['[Valeur 1]', '[Valeur 2]', '[Valeur 3]'];
+
+const shots = [
+  { label: 'Nigéria', x: 250, y: 330 },
+  { label: 'Roumanie', x: 78, y: 300 },
+  { label: 'Albanie', x: 422, y: 300 },
+  { label: 'Italie', x: 130, y: 160 },
+  { label: 'Hongrie', x: 370, y: 160 },
+  { label: 'France', x: 250, y: 222 },
+  { label: 'Asie', x: 250, y: 420, next: true },
+];
+---
+
+<Base
+  title="À propos"
+  description="Yohann Sterling : ingénieur informatique diplômé du CESI, en MBA Big Data & IA, développeur web. Basketteur en club, Camerounais installé en France."
+>
+  <section class="wrap hero" id="haut" data-section="Yohann" aria-labelledby="page-title">
+    <div class="hero-text">
+      <p class="label">À propos</p>
+      <h1 id="page-title" class="display page-title">Yohann</h1>
+      <p class="lead">
+        Camerounais, installé en France, élevé dans une culture anglo-saxonne. Je construis des sites comme je joue&nbsp;: lire
+        le jeu d'abord, exécuter proprement ensuite.
+      </p>
+      <ul role="list" class="traits">
+        {traits.map((t) => <li>{t}</li>)}
+      </ul>
+    </div>
+    <PhotoPlaceholder class="hero-photo" />
+  </section>
+
+  <section class="section" id="parcours" data-section="Parcours" aria-labelledby="t-parcours">
+    <div class="wrap row">
+      <h2 id="t-parcours" class="h-section">Parcours</h2>
+      <ol role="list" class="career">
+        {
+          career.map((c) => (
+            <li class="career-item">
+              <span class:list={['career-year label', { 'placeholder-text': isPh(c.year) }]}>{c.year}</span>
+              <div>
+                <h3 class="career-title">{c.title}</h3>
+                <p class="muted">
+                  <span class:list={{ 'placeholder-text': isPh(c.place) }}>{c.place}</span> · {c.status}
+                </p>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </section>
+
+  <section class="section" id="ce-que-j-aime" data-section="Ce que j'aime" aria-labelledby="t-aime">
+    <div class="wrap row">
+      <h2 id="t-aime" class="h-section">Ce que j'aime construire</h2>
+      <div class="text">
+        <p class="lead placeholder-text">
+          [2 ou 3 phrases : le type de sites que tu aimes faire, pour qui, et pourquoi.]
+        </p>
+        <h3 class="label">Valeurs</h3>
+        <ul role="list" class="values">
+          {values.map((v) => <li class:list={{ 'placeholder-text': isPh(v) }}>{v}</li>)}
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="fiche" data-section="Fiche joueur" aria-labelledby="t-fiche">
+    <div class="wrap row">
+      <h2 id="t-fiche" class="h-section">Hors écran</h2>
+      <dl class="card">
+        <div class="card-top">
+          <span class="card-num display" aria-hidden="true">YS</span>
+          <span class="label">Fiche joueur</span>
+        </div>
+        {
+          card.map((c) => (
+            <div class="card-row">
+              <dt class="label">{c.k}</dt>
+              <dd>{c.v}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+  </section>
+
+  <section class="section" id="voyages" data-section="Voyages" aria-labelledby="t-voyages">
+    <div class="wrap row">
+      <div class="text">
+        <h2 id="t-voyages" class="h-section">Shot chart</h2>
+        <p class="muted">Chaque pays visité est un tir réussi. Le prochain se prend en Asie.</p>
+      </div>
+      <div>
+        <ShotChart shots={shots} />
+      </div>
+    </div>
+  </section>
+
+  <CtaBlock title="Envie de jouer ensemble ?" text="Parlez-moi de votre projet, je vous réponds avec les bonnes questions." />
+</Base>
+
+<style>
+  .hero {
+    display: grid;
+    gap: var(--s-7) var(--gutter);
+    padding-block: clamp(48px, 8vw, 128px) var(--section-pad);
+  }
+
+  .hero-text {
+    display: grid;
+    gap: var(--s-5);
+    align-content: end;
+  }
+
+  .page-title {
+    font-size: var(--fs-6);
+  }
+
+  .lead {
+    max-width: 44ch;
+  }
+
+  .traits {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+  }
+
+  .traits li {
+    padding: var(--s-1) var(--s-4);
+    border: 1px solid var(--c-parquet);
+    border-radius: 999px;
+    font-size: var(--fs--1);
+    font-weight: 600;
+  }
+
+  .hero :global(.hero-photo) {
+    max-width: 420px;
+  }
+
+  @media (min-width: 768px) {
+    .hero {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      align-items: end;
+    }
+
+    .hero :global(.hero-photo) {
+      justify-self: end;
+      width: 100%;
+    }
+  }
+
+  /* Sections : titre à gauche, contenu à droite */
+  .row {
+    display: grid;
+    gap: var(--s-6) var(--gutter);
+  }
+
+  .text {
+    display: grid;
+    gap: var(--s-5);
+    align-content: start;
+  }
+
+  @media (min-width: 1024px) {
+    .row {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+
+    .row > :first-child {
+      grid-column: 1 / span 4;
+    }
+
+    .row > :last-child {
+      grid-column: 6 / -1;
+    }
+  }
+
+  /* Parcours */
+  .career {
+    border-top: 1px solid var(--c-ligne);
+  }
+
+  .career-item {
+    display: grid;
+    grid-template-columns: 6rem 1fr;
+    gap: var(--s-4);
+    padding-block: var(--s-5);
+    border-bottom: 1px solid var(--c-ligne);
+  }
+
+  .career-year {
+    padding-top: 0.35em;
+  }
+
+  .career-title {
+    font-size: var(--fs-1);
+    font-weight: 600;
+  }
+
+  .values {
+    display: grid;
+    gap: var(--s-2);
+  }
+
+  /* Fiche joueur */
+  .card {
+    padding: var(--s-5);
+    border: 1px solid var(--c-ligne);
+    border-radius: 10px;
+    background: linear-gradient(180deg, var(--c-banc), var(--c-nuit));
+  }
+
+  .card-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--s-4);
+    padding-bottom: var(--s-4);
+    border-bottom: 1px solid var(--c-ligne);
+  }
+
+  .card-num {
+    font-size: var(--fs-5);
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--c-led);
+  }
+
+  .card-row {
+    display: grid;
+    gap: var(--s-1);
+    padding-block: var(--s-4);
+    border-bottom: 1px solid var(--c-ligne);
+  }
+
+  .card-row:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  @media (min-width: 640px) {
+    .card-row {
+      grid-template-columns: 11rem 1fr;
+      align-items: baseline;
+      gap: var(--s-4);
+    }
+  }
+</style>

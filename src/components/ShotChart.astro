@@ -1,0 +1,205 @@
+---
+// Shot chart des voyages : chaque pays visité est un tir réussi, le prochain est en pointillé.
+// Les tirs partent vers le panier quand le schéma arrive à l'écran en descendant, et se défont en remontant.
+interface Shot {
+  label: string;
+  x: number;
+  y: number;
+  next?: boolean;
+}
+
+interface Props {
+  shots: Shot[];
+}
+
+const { shots } = Astro.props;
+const HOOP = { x: 250, y: 52 };
+const arc = (s: Shot) => {
+  const cx = (s.x + HOOP.x) / 2 + (s.x < HOOP.x ? -40 : s.x > HOOP.x ? 40 : 0);
+  const cy = Math.min(s.y, HOOP.y) - 30;
+  return `M${s.x} ${s.y - 14} Q${cx} ${cy} ${HOOP.x} ${HOOP.y + 8}`;
+};
+---
+
+<div class="chart" data-chart>
+  <svg viewBox="0 0 500 480" role="img" aria-label="Shot chart des voyages, détaillé dans la liste">
+    <g class="court">
+      <rect x="10" y="10" width="480" height="460" rx="4"></rect>
+      <rect x="190" y="10" width="120" height="190"></rect>
+      <circle cx="250" cy="200" r="60"></circle>
+      <path d="M40 10 L40 110 A215 215 0 0 0 460 110 L460 10"></path>
+      <line x1="225" y1="32" x2="275" y2="32"></line>
+    </g>
+    <circle class="hoop" cx={HOOP.x} cy={HOOP.y} r="12"></circle>
+
+    {
+      shots.map((s, i) => (
+        <g class:list={['shot', { 'is-next': s.next }]} style={`--i:${i}`}>
+          <path class="shot-arc" d={arc(s)} pathLength="1" />
+          <circle class="shot-mark" cx={s.x} cy={s.y} r="11" />
+          <text x={s.x} y={s.y + 34} text-anchor="middle">
+            {s.label}
+          </text>
+        </g>
+      ))
+    }
+  </svg>
+
+  <ul class="chart-list" role="list">
+    {
+      shots.map((s) => (
+        <li class:list={{ 'is-next': s.next }}>
+          <span class="chart-dot" aria-hidden="true" />
+          {s.label}
+          {s.next && <span class="label"> · prochain tir</span>}
+        </li>
+      ))
+    }
+  </ul>
+</div>
+
+<script>
+  import { reducedMotion } from '../scripts/clock';
+
+  document.querySelectorAll<HTMLElement>('[data-chart]').forEach((el) => {
+    if (reducedMotion()) return;
+    el.classList.add('will-shoot');
+    const svg = el.querySelector('svg')!;
+    let first = true;
+    new IntersectionObserver(
+      ([entry]) => {
+        const below = entry.boundingClientRect.top > 0;
+        if (entry.isIntersecting) el.classList.add('is-on');
+        else if (below) el.classList.remove('is-on');
+        else if (first) el.classList.add('is-on');
+        first = false;
+      },
+      { rootMargin: '0px 0px -25% 0px' },
+    ).observe(svg);
+  });
+</script>
+
+<style>
+  .chart {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s-6);
+  }
+
+  svg {
+    width: 100%;
+    max-width: 560px;
+    height: auto;
+    border-radius: 8px;
+    background: var(--c-banc);
+  }
+
+  .court {
+    fill: none;
+    stroke: var(--c-craie);
+    stroke-opacity: 0.2;
+    stroke-width: 1.5;
+  }
+
+  .hoop {
+    fill: none;
+    stroke: var(--c-led);
+    stroke-width: 3;
+  }
+
+  .shot-arc {
+    fill: none;
+    stroke: var(--c-led);
+    stroke-width: 1.5;
+    stroke-opacity: 0.6;
+  }
+
+  .shot-mark {
+    fill: var(--c-led);
+  }
+
+  .shot text {
+    font-family: var(--f-text);
+    font-weight: 600;
+    font-size: 17px;
+    fill: var(--c-craie);
+  }
+
+  .shot.is-next .shot-arc {
+    stroke: var(--c-parquet);
+    stroke-dasharray: 0.02 0.02;
+  }
+
+  .shot.is-next .shot-mark {
+    fill: none;
+    stroke: var(--c-craie);
+    stroke-width: 2;
+    stroke-dasharray: 4 4;
+  }
+
+  /* Animation : le tir part vers le panier, puis le point du tir réussi apparaît. Transitions = réversibles. */
+  .will-shoot .shot-arc {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    transition: stroke-dashoffset 450ms var(--ease-inout);
+    transition-delay: calc(var(--i) * 180ms);
+  }
+
+  .will-shoot .shot-mark,
+  .will-shoot .shot text {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+    transform: scale(0.4);
+    transition: opacity 250ms var(--ease-out), transform 300ms var(--ease-out);
+    transition-delay: calc(var(--i) * 180ms + 300ms);
+  }
+
+  .will-shoot.is-on .shot-arc {
+    stroke-dashoffset: 0;
+  }
+
+  .will-shoot.is-on .shot-mark,
+  .will-shoot.is-on .shot text {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* Le tir à venir reste en pointillé : on ne trace que son point */
+  .will-shoot .shot.is-next .shot-arc {
+    stroke-dasharray: 0.02 0.02;
+    stroke-dashoffset: 0;
+    opacity: 0;
+    transition: opacity 400ms linear;
+    transition-delay: calc(var(--i) * 180ms + 200ms);
+  }
+
+  .will-shoot.is-on .shot.is-next .shot-arc {
+    opacity: 1;
+  }
+
+  .chart-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-3) var(--s-5);
+  }
+
+  .chart-list li {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s-2);
+    font-weight: 500;
+  }
+
+  .chart-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--c-led);
+  }
+
+  .chart-list .is-next .chart-dot {
+    background: transparent;
+    border: 1.5px dashed var(--c-craie);
+  }
+</style>
