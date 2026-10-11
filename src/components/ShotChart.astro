@@ -1,6 +1,11 @@
 ---
 // Shot chart des voyages : chaque pays visité est un tir réussi, le prochain est en pointillé.
 // Les tirs partent vers le panier quand le schéma arrive à l'écran en descendant, et se défont en remontant.
+// Une fois le schéma dessiné, survoler un point (ou un pays de la liste) affiche sa photo.
+// Photos : déposer src/assets/voyages/<pays>.jpg (ex. italie.jpg, nigeria.jpg). Sans photo, un emplacement s'affiche.
+import { getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
 interface Shot {
   label: string;
   x: number;
@@ -13,45 +18,106 @@ interface Props {
 }
 
 const { shots } = Astro.props;
+const W = 500;
+const H = 480;
 const HOOP = { x: 250, y: 52 };
 const arc = (s: Shot) => {
   const cx = (s.x + HOOP.x) / 2 + (s.x < HOOP.x ? -40 : s.x > HOOP.x ? 40 : 0);
   const cy = Math.min(s.y, HOOP.y) - 30;
   return `M${s.x} ${s.y - 14} Q${cx} ${cy} ${HOOP.x} ${HOOP.y + 8}`;
 };
+
+const slug = (s: string) =>
+  s
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-');
+
+const files = import.meta.glob<ImageMetadata>('../assets/voyages/*.{jpg,jpeg,png,webp,avif}', {
+  eager: true,
+  import: 'default',
+});
+const photoFor = (label: string) =>
+  Object.entries(files).find(([path]) => path.split('/').pop()!.replace(/\.\w+$/, '') === slug(label))?.[1];
+
+const previews = await Promise.all(
+  shots.map(async (s) => {
+    const src = photoFor(s.label);
+    if (!src) return { ...s, photo: null };
+    const [avif, webp] = await Promise.all([
+      getImage({ src, width: 480, height: 360, format: 'avif', fit: 'cover' }),
+      getImage({ src, width: 480, height: 360, format: 'webp', fit: 'cover' }),
+    ]);
+    return { ...s, photo: { avif: avif.src, webp: webp.src } };
+  }),
+);
+
+// Décale la carte vers l'intérieur quand le point est près d'un bord
+const shift = (x: number) => (x < 140 ? '-15%' : x > W - 140 ? '-85%' : '-50%');
 ---
 
 <div class="chart" data-chart>
-  <svg viewBox="0 0 500 480" role="img" aria-label="Shot chart des voyages, détaillé dans la liste">
-    <g class="court">
-      <rect x="10" y="10" width="480" height="460" rx="4"></rect>
-      <rect x="190" y="10" width="120" height="190"></rect>
-      <circle cx="250" cy="200" r="60"></circle>
-      <path d="M40 10 L40 110 A215 215 0 0 0 460 110 L460 10"></path>
-      <line x1="225" y1="32" x2="275" y2="32"></line>
-    </g>
-    <circle class="hoop" cx={HOOP.x} cy={HOOP.y} r="12"></circle>
+  <div class="stage">
+    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Shot chart des voyages, détaillé dans la liste">
+      <g class="court">
+        <rect x="10" y="10" width="480" height="460" rx="4"></rect>
+        <rect x="190" y="10" width="120" height="190"></rect>
+        <circle cx="250" cy="200" r="60"></circle>
+        <path d="M40 10 L40 110 A215 215 0 0 0 460 110 L460 10"></path>
+        <line x1="225" y1="32" x2="275" y2="32"></line>
+      </g>
+      <circle class="hoop" cx={HOOP.x} cy={HOOP.y} r="12"></circle>
+
+      {
+        shots.map((s, i) => (
+          <g class:list={['shot', { 'is-next': s.next }]} style={`--i:${i}`} data-shot={i}>
+            <path class="shot-arc" d={arc(s)} pathLength="1" />
+            <circle class="shot-halo" cx={s.x} cy={s.y} r="19" />
+            <circle class="shot-mark" cx={s.x} cy={s.y} r="11" />
+            <text x={s.x} y={s.y + 34} text-anchor="middle">
+              {s.label}
+            </text>
+            <circle class="shot-hit" cx={s.x} cy={s.y} r="26" />
+          </g>
+        ))
+      }
+    </svg>
 
     {
-      shots.map((s, i) => (
-        <g class:list={['shot', { 'is-next': s.next }]} style={`--i:${i}`}>
-          <path class="shot-arc" d={arc(s)} pathLength="1" />
-          <circle class="shot-mark" cx={s.x} cy={s.y} r="11" />
-          <text x={s.x} y={s.y + 34} text-anchor="middle">
-            {s.label}
-          </text>
-        </g>
+      previews.map((p, i) => (
+        <figure
+          class="preview"
+          id={`voyage-${i}`}
+          data-preview={i}
+          hidden
+          style={`left:${(p.x / W) * 100}%; top:${(p.y / H) * 100}%; --shift:${shift(p.x)}; --flip:${p.y < 200 ? 1 : 0}`}
+        >
+          {p.photo ? (
+            <picture>
+              <source srcset={p.photo.avif} type="image/avif" />
+              <img src={p.photo.webp} alt={`Photo de voyage : ${p.label}`} width="480" height="360" loading="lazy" decoding="async" />
+            </picture>
+          ) : (
+            <div class="preview-ph" role="img" aria-label={`Photo à venir : ${p.label}`}>
+              <span class="label">{p.next ? '[Bientôt]' : '[Photo à venir]'}</span>
+            </div>
+          )}
+          <figcaption class="label">{p.next ? `${p.label} · prochain tir` : p.label}</figcaption>
+        </figure>
       ))
     }
-  </svg>
+  </div>
 
   <ul class="chart-list" role="list">
     {
-      shots.map((s) => (
+      shots.map((s, i) => (
         <li class:list={{ 'is-next': s.next }}>
-          <span class="chart-dot" aria-hidden="true" />
-          {s.label}
-          {s.next && <span class="label"> · prochain tir</span>}
+          <button type="button" class="chart-btn" data-shot-btn={i} aria-controls={`voyage-${i}`} aria-expanded="false">
+            <span class="chart-dot" aria-hidden="true" />
+            {s.label}
+            {s.next && <span class="label"> · prochain tir</span>}
+          </button>
         </li>
       ))
     }
@@ -62,20 +128,61 @@ const arc = (s: Shot) => {
   import { reducedMotion } from '../scripts/clock';
 
   document.querySelectorAll<HTMLElement>('[data-chart]').forEach((el) => {
-    if (reducedMotion()) return;
-    el.classList.add('will-shoot');
     const svg = el.querySelector('svg')!;
-    let first = true;
-    new IntersectionObserver(
-      ([entry]) => {
-        const below = entry.boundingClientRect.top > 0;
-        if (entry.isIntersecting) el.classList.add('is-on');
-        else if (below) el.classList.remove('is-on');
-        else if (first) el.classList.add('is-on');
-        first = false;
-      },
-      { rootMargin: '0px 0px -25% 0px' },
-    ).observe(svg);
+    const previews = el.querySelectorAll<HTMLElement>('[data-preview]');
+    const buttons = el.querySelectorAll<HTMLButtonElement>('[data-shot-btn]');
+    const shots = el.querySelectorAll<SVGGElement>('[data-shot]');
+    let open = -1;
+
+    // Animation des tirs (désactivée en mouvement réduit : le schéma est alors affiché complet)
+    if (!reducedMotion()) {
+      el.classList.add('will-shoot');
+      let first = true;
+      new IntersectionObserver(
+        ([entry]) => {
+          const below = entry.boundingClientRect.top > 0;
+          if (entry.isIntersecting) el.classList.add('is-on');
+          else if (below) {
+            el.classList.remove('is-on');
+            show(-1);
+          } else if (first) el.classList.add('is-on');
+          first = false;
+        },
+        { rootMargin: '0px 0px -25% 0px' },
+      ).observe(svg);
+    }
+
+    // Les photos ne s'ouvrent qu'une fois le schéma dessiné
+    const drawn = () => !el.classList.contains('will-shoot') || el.classList.contains('is-on');
+
+    function show(i: number) {
+      if (i === open) return;
+      if (i >= 0 && !drawn()) return;
+      open = i;
+      previews.forEach((p, k) => (p.hidden = k !== i));
+      buttons.forEach((b, k) => b.setAttribute('aria-expanded', String(k === i)));
+      shots.forEach((s, k) => s.classList.toggle('is-active', k === i));
+    }
+
+    shots.forEach((s, i) => {
+      s.addEventListener('pointerenter', (e) => e.pointerType === 'mouse' && show(i));
+      s.addEventListener('pointerleave', (e) => e.pointerType === 'mouse' && show(-1));
+      // Tactile : un tap ouvre ou ferme la photo
+      s.addEventListener('click', () => show(open === i ? -1 : i));
+    });
+
+    buttons.forEach((b, i) => {
+      b.addEventListener('pointerenter', (e) => e.pointerType === 'mouse' && show(i));
+      b.addEventListener('pointerleave', (e) => e.pointerType === 'mouse' && show(-1));
+      b.addEventListener('focus', () => show(i));
+      b.addEventListener('blur', () => show(-1));
+      b.addEventListener('click', () => show(open === i ? -1 : i));
+    });
+
+    document.addEventListener('keydown', (e) => e.key === 'Escape' && show(-1));
+    document.addEventListener('pointerdown', (e) => {
+      if (open >= 0 && !el.contains(e.target as Node)) show(-1);
+    });
   });
 </script>
 
@@ -86,9 +193,13 @@ const arc = (s: Shot) => {
     gap: var(--s-6);
   }
 
+  .stage {
+    position: relative;
+    max-width: 560px;
+  }
+
   svg {
     width: 100%;
-    max-width: 560px;
     height: auto;
     border-radius: 8px;
     background: var(--c-banc);
@@ -118,11 +229,29 @@ const arc = (s: Shot) => {
     fill: var(--c-led);
   }
 
+  .shot-hit {
+    fill: transparent;
+    cursor: pointer;
+  }
+
+  .shot-halo {
+    fill: none;
+    stroke: var(--c-craie);
+    stroke-width: 2;
+    opacity: 0;
+    transition: opacity var(--t-hover) var(--ease-out);
+  }
+
+  .shot.is-active .shot-halo {
+    opacity: 1;
+  }
+
   .shot text {
     font-family: var(--f-text);
     font-weight: 600;
     font-size: 17px;
     fill: var(--c-craie);
+    pointer-events: none;
   }
 
   .shot.is-next .shot-arc {
@@ -178,17 +307,74 @@ const arc = (s: Shot) => {
     opacity: 1;
   }
 
+  /* Carte photo : au-dessus du point (en dessous s'il est trop haut), décalée vers l'intérieur près des bords */
+  .preview {
+    position: absolute;
+    z-index: 2;
+    width: min(220px, 46%);
+    margin: 0;
+    padding: var(--s-2);
+    border: 1px solid var(--c-ligne);
+    border-radius: 8px;
+    background: var(--c-nuit);
+    box-shadow: 0 18px 40px -12px #000;
+    pointer-events: none;
+    transform: translate(var(--shift), calc(-100% - 28px + var(--flip) * (100% + 56px)));
+    transform-origin: 50% 100%;
+    animation: preview-in 180ms var(--ease-out);
+  }
+
+  .preview img,
+  .preview-ph {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: 4px;
+    object-fit: cover;
+  }
+
+  .preview-ph {
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(circle at 70% 25%, #2a2a2e, transparent 60%),
+      repeating-linear-gradient(135deg, var(--c-banc) 0 10px, #18181b 10px 20px);
+  }
+
+  .preview figcaption {
+    padding: var(--s-2) var(--s-1) 0;
+    color: var(--c-craie);
+  }
+
+  @keyframes preview-in {
+    from {
+      opacity: 0;
+      scale: 0.92;
+    }
+  }
+
+  /* Liste : même information en texte, et accès clavier aux photos */
   .chart-list {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--s-3) var(--s-5);
+    gap: var(--s-1) var(--s-2);
   }
 
-  .chart-list li {
+  .chart-btn {
     display: inline-flex;
     align-items: center;
     gap: var(--s-2);
+    min-height: 44px;
+    padding: 0 var(--s-3);
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
     font-weight: 500;
+    cursor: pointer;
+  }
+
+  .chart-btn:hover,
+  .chart-btn[aria-expanded='true'] {
+    border-color: var(--c-parquet);
   }
 
   .chart-dot {
