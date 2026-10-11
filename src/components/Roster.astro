@@ -2,14 +2,11 @@
 // Roster : une ligne par projet (tient de 3 à 8 sans retouche).
 // Desktop : la fiche du projet survolé s'affiche dans une colonne fixe, sans décaler la page.
 // Mobile et tablette : la fiche est affichée sous chaque ligne.
-import { getCollection } from 'astro:content';
 import ProjectCard from './ProjectCard.astro';
 import { url } from '../lib/url';
+import { getProjects, isPlaceholder as isPh } from '../lib/projects';
 
-const projects = (await getCollection('projets')).sort(
-  (a, b) => Number(a.data.pinned) - Number(b.data.pinned) || a.data.order - b.data.order,
-);
-const isPh = (v: string) => v.startsWith('[');
+const projects = await getProjects();
 ---
 
 <div class="roster" data-roster>

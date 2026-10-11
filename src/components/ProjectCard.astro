@@ -7,20 +7,29 @@ interface Props {
   project: CollectionEntry<'projets'>;
   /** Sans en-tête, quand le nom du projet est déjà affiché juste au-dessus. */
   compact?: boolean;
+  /** Rend toute la fiche cliquable vers l'étude de cas. */
+  href?: string;
+  /** Niveau du titre selon la page (h2 sous un h1 de page, h3 dans une section). */
+  level?: 2 | 3;
 }
 
-const { project, compact = false } = Astro.props;
+const { project, compact = false, href, level = 3 } = Astro.props;
 const { data } = project;
 const isPh = (v: string) => v.startsWith('[');
+const Heading = level === 2 ? 'h2' : 'h3';
 ---
 
-<article class="card">
+<article class:list={['card', { 'is-link': href }]}>
+  <div class="card-grid">
   <ProjectVisual angle={data.visual.angle} zone={data.visual.zone} number={data.number} placeholder={data.placeholder} />
+  <div class="card-info">
   <div class="card-head" hidden={compact}>
     <span class="card-num display" aria-hidden="true">{data.number}</span>
     <div>
       <p class="label">{data.client} · <span class:list={{ 'placeholder-text': isPh(data.type) }}>{data.type}</span></p>
-      <h3 class="card-title" class:list={{ 'placeholder-text': isPh(data.title) }}>{data.title}</h3>
+      <Heading class="card-title" class:list={{ 'placeholder-text': isPh(data.title) }}>
+        {href ? <a class="card-link" href={href}>{data.title}</a> : data.title}
+      </Heading>
     </div>
   </div>
   <dl class="box">
@@ -33,17 +42,74 @@ const isPh = (v: string) => v.startsWith('[');
       ))
     }
   </dl>
+  </div>
+  </div>
 </article>
 
 <style>
   .card {
-    display: grid;
-    gap: var(--s-5);
     padding: var(--s-4);
     border: 1px solid var(--c-ligne);
     border-radius: 10px;
     background: linear-gradient(180deg, var(--c-banc), var(--c-nuit));
     container-type: inline-size;
+  }
+
+  .card-grid,
+  .card-info {
+    display: grid;
+    gap: var(--s-5);
+  }
+
+  /* Fiche large (ex. épinglée en pleine largeur) : visuel à gauche, infos à droite */
+  @container (min-width: 760px) {
+    .card-grid {
+      grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+      align-items: center;
+      gap: var(--s-5) var(--s-7);
+    }
+  }
+
+  /* Fiche cliquable : le lien du titre couvre toute la carte */
+  .card.is-link {
+    position: relative;
+    transition: border-color var(--t-hover) var(--ease-out), transform var(--t-base) var(--ease-out);
+  }
+
+  .card-link {
+    text-decoration: none;
+  }
+
+  .card-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+  }
+
+  .card-link:focus-visible {
+    outline: none;
+  }
+
+  .card.is-link:hover,
+  .card.is-link:focus-within {
+    border-color: var(--c-led);
+  }
+
+  .card.is-link:has(.card-link:focus-visible) {
+    outline: var(--focus-ring);
+    outline-offset: 3px;
+  }
+
+  .card.is-link:hover .card-num,
+  .card.is-link:focus-within .card-num {
+    color: var(--c-led);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .card.is-link:hover {
+      transform: translateY(-4px);
+    }
   }
 
   .card-head {

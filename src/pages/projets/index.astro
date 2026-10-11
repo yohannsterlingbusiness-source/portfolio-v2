@@ -1,0 +1,133 @@
+---
+import Base from '../../layouts/Base.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import CtaBlock from '../../components/CtaBlock.astro';
+import { getProjects } from '../../lib/projects';
+import { url } from '../../lib/url';
+
+const projects = await getProjects();
+const clientProjects = projects.filter((p) => !p.data.pinned);
+const types = [...new Set(clientProjects.map((p) => p.data.type))];
+// Le filtre n'a de sens qu'à partir de 5 projets et d'au moins 2 types
+const showFilter = clientProjects.length >= 5 && types.length >= 2;
+const count = String(projects.length).padStart(2, '0');
+---
+
+<Base
+  title="Projets"
+  description="Les projets de Yohann Sterling, développeur web : création et refonte de sites, présentés comme des fiches joueur avec leurs résultats réels."
+>
+  <section class="wrap page-head" id="haut" data-section="Projets" aria-labelledby="page-title">
+    <p class="label">Roster · {count} fiches</p>
+    <h1 id="page-title" class="display page-title">Projets</h1>
+    <p class="lead">
+      Chaque projet est une fiche joueur&nbsp;: un numéro, un poste, et une box score avec les résultats réels. Tant qu'un
+      résultat n'est pas mesuré, il reste entre crochets.
+    </p>
+  </section>
+
+  <section class="wrap roster-full" id="fiches" data-section="Fiches" aria-label="Fiches projets">
+    {
+      showFilter && (
+        <div class="filter" role="group" aria-label="Filtrer par type de projet" data-filter>
+          <button type="button" class="chip" aria-pressed="true" data-type="">
+            Tous
+          </button>
+          {types.map((t) => (
+            <button type="button" class="chip" aria-pressed="false" data-type={t}>
+              {t}
+            </button>
+          ))}
+          <span class="sr-only" aria-live="polite" data-filter-status />
+        </div>
+      )
+    }
+
+    <ul role="list" class="cards">
+      {
+        projects.map((p) => (
+          <li data-card-type={p.data.pinned ? '' : p.data.type} class:list={{ 'is-pinned': p.data.pinned }}>
+            <ProjectCard project={p} href={url(`projets/${p.id}/`)} level={2} />
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <CtaBlock title="La prochaine fiche, c'est la vôtre." text="Création ou refonte : parlons de votre projet." />
+</Base>
+
+<script>
+  // Filtre par type (affiché seulement à partir de 5 projets). La fiche « Ce site » reste toujours visible.
+  const filter = document.querySelector<HTMLElement>('[data-filter]');
+  if (filter) {
+    const chips = filter.querySelectorAll<HTMLButtonElement>('[data-type]');
+    const items = document.querySelectorAll<HTMLElement>('[data-card-type]');
+    const status = filter.querySelector('[data-filter-status]');
+    chips.forEach((chip) =>
+      chip.addEventListener('click', () => {
+        const type = chip.dataset.type ?? '';
+        chips.forEach((c) => c.setAttribute('aria-pressed', String(c === chip)));
+        let shown = 0;
+        items.forEach((li) => {
+          const visible = !type || !li.dataset.cardType || li.dataset.cardType === type;
+          li.hidden = !visible;
+          if (visible) shown++;
+        });
+        if (status) status.textContent = `${shown} projets affichés`;
+      }),
+    );
+  }
+</script>
+
+<style>
+  .page-head {
+    display: grid;
+    gap: var(--s-5);
+    padding-block: clamp(48px, 8vw, 128px) var(--s-8);
+  }
+
+  .page-title {
+    font-size: var(--fs-6);
+  }
+
+  .roster-full {
+    padding-bottom: var(--section-pad);
+  }
+
+  .filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+    margin-bottom: var(--s-6);
+  }
+
+  .chip {
+    min-height: 44px;
+    padding: 0 var(--s-4);
+    border: 1px solid var(--c-parquet);
+    border-radius: 999px;
+    background: transparent;
+    font-weight: 600;
+    font-size: var(--fs--1);
+    cursor: pointer;
+    transition: background-color var(--t-hover) var(--ease-out), color var(--t-hover) var(--ease-out);
+  }
+
+  .chip[aria-pressed='true'] {
+    background: var(--c-craie);
+    border-color: var(--c-craie);
+    color: var(--c-nuit);
+  }
+
+  .cards {
+    display: grid;
+    gap: var(--gutter);
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  }
+
+  /* « Ce site » ferme la grille sur toute la largeur, quel que soit le nombre de projets */
+  .cards > .is-pinned {
+    grid-column: 1 / -1;
+  }
+</style>
