@@ -22,14 +22,11 @@ import { url } from '../lib/url';
     <p class="hero-status"><span class="dot" aria-hidden="true"></span><span class="placeholder-text">{site.availability}</span></p>
   </div>
 
-  <figure class="hero-clock">
+  <div class="hero-clock">
     <div class="hero-clock-frame">
       <ShotClock name="hero" class="hero-clock-svg" />
     </div>
-    <figcaption class="label">
-      24 secondes, une possession. Le chrono <span class="hide-mobile">du menu</span><span class="show-mobile">en bas</span> suit votre lecture.
-    </figcaption>
-  </figure>
+  </div>
 </section>
 
 <script>
@@ -102,7 +99,6 @@ import { url } from '../lib/url';
   }
 
   .hero-clock {
-    margin: 0;
     display: grid;
     gap: var(--s-3);
     align-content: start;
@@ -122,23 +118,6 @@ import { url } from '../lib/url';
 
   .hero-clock :global(.hero-clock-svg) {
     transform-origin: 50% 50%;
-  }
-
-  .hero-clock figcaption {
-    max-width: 30ch;
-  }
-
-  .show-mobile {
-    display: none;
-  }
-
-  @media (max-width: 767px) {
-    .hide-mobile {
-      display: none;
-    }
-    .show-mobile {
-      display: inline;
-    }
   }
 
   @media (max-width: 359px) {

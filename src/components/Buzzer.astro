@@ -24,12 +24,12 @@ const rays = Array.from({ length: 28 }, (_, i) => {
 
   <div class="wrap buzzer-inner">
     <div class="buzzer-clock">
-      <ShotClock value="0.0" />
+      <ShotClock value="0.0" name="progress" />
     </div>
     <h2 id="buzzer-title" class="display buzzer-title">Dernière possession.</h2>
     <p class="buzzer-sub">On la joue ensemble&nbsp;?</p>
     <div class="buzzer-actions">
-      <ContactButton label="Lancer le projet" />
+      <ContactButton label="Soyons coéquipiers" />
       <a class="buzzer-mail" href={`mailto:${site.email}`}>{site.email}</a>
     </div>
   </div>
@@ -38,27 +38,18 @@ const rays = Array.from({ length: 28 }, (_, i) => {
 <script>
   import { reducedMotion } from '../scripts/clock';
 
+  // Le chrono de cette section est le même que celui du menu : il descend au fil du scroll.
+  // Quand il atteint 0.0, le Header émet clock:zero et l'impact frame se joue.
   const el = document.querySelector<HTMLElement>('[data-buzzer]');
-  let played = false;
-  try {
-    played = sessionStorage.getItem('ys-buzzer') === '1';
-  } catch {}
 
-  if (el && !played && !reducedMotion()) {
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) return;
-        io.disconnect();
-        try {
-          sessionStorage.setItem('ys-buzzer', '1');
-        } catch {}
-        el.classList.add('is-impact');
-        setTimeout(() => el.classList.remove('is-impact'), 400);
-      },
-      { threshold: 0.6 },
-    );
-    io.observe(el);
-  }
+  const impact = () => {
+    if (!el || reducedMotion()) return;
+    el.classList.add('is-impact');
+    setTimeout(() => el.classList.remove('is-impact'), 400);
+  };
+
+  if (document.documentElement.dataset.clockZero) impact();
+  else document.addEventListener('clock:zero', impact, { once: true });
 </script>
 
 <style>
