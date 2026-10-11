@@ -1,6 +1,6 @@
 ﻿---
-// Moment mémorable : le chrono arrive à 0.0 sur cette section, et le survol déclenche une impact frame
-// façon anime de sport. Pur CSS : activée à l'entrée de la souris, estompée à sa sortie.
+// Moment mémorable : le chrono arrive à 0.0 sur cette section et une impact frame façon anime de sport
+// s'active quand la section atteint le milieu de l'écran, puis s'estompe quand elle en sort.
 import ShotClock from './ShotClock.astro';
 import ContactButton from './ContactButton.astro';
 import { site } from '../data/site';
@@ -35,6 +35,18 @@ const rays = Array.from({ length: 28 }, (_, i) => {
     </div>
   </div>
 </section>
+
+<script>
+  import { reducedMotion } from '../scripts/clock';
+
+  // Actif tant que la section occupe la bande centrale de l'écran (entre 40 % et 60 % de la hauteur)
+  const el = document.querySelector<HTMLElement>('[data-buzzer]');
+  if (el && !reducedMotion()) {
+    new IntersectionObserver(([entry]) => el.classList.toggle('is-hot', entry.isIntersecting), {
+      rootMargin: '-40% 0px -40% 0px',
+    }).observe(el);
+  }
+</script>
 
 <style>
   .buzzer {
@@ -101,34 +113,32 @@ const rays = Array.from({ length: 28 }, (_, i) => {
     transition: opacity 350ms var(--ease-out), transform 350ms var(--ease-out);
   }
 
-  /* Impact frame au survol : fort contraste, lignes de vitesse, titre secoué. Entrée rapide, sortie douce. */
-  @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-    .buzzer:hover {
-      background: var(--c-craie);
-      color: var(--c-nuit);
-      transition-duration: 160ms;
-    }
+  /* Impact frame : fort contraste, lignes de vitesse, titre secoué. Entrée rapide, sortie douce. */
+  .buzzer.is-hot {
+    background: var(--c-craie);
+    color: var(--c-nuit);
+    transition-duration: 160ms;
+  }
 
-    .buzzer:hover .rays {
-      opacity: 1;
-      transform: scale(1);
-      transition-duration: 160ms;
-    }
+  .buzzer.is-hot .rays {
+    opacity: 1;
+    transform: scale(1);
+    transition-duration: 160ms;
+  }
 
-    .buzzer:hover .buzzer-title {
-      transform: scale(1.06) rotate(-2deg);
-      transition-duration: 160ms;
-    }
+  .buzzer.is-hot .buzzer-title {
+    transform: scale(1.06) rotate(-2deg);
+    transition-duration: 160ms;
+  }
 
-    .buzzer:hover .buzzer-clock {
-      transform: scale(1.1) rotate(3deg);
-      box-shadow: 0 0 0 6px var(--c-nuit);
-      transition-duration: 160ms;
-    }
+  .buzzer.is-hot .buzzer-clock {
+    transform: scale(1.1) rotate(3deg);
+    box-shadow: 0 0 0 6px var(--c-nuit);
+    transition-duration: 160ms;
+  }
 
-    .buzzer:hover :focus-visible {
-      outline-color: var(--c-nuit);
-    }
+  .buzzer.is-hot :focus-visible {
+    outline-color: var(--c-nuit);
   }
 </style>
 
