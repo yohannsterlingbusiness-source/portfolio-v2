@@ -12,7 +12,20 @@ export const site = {
     "Yohann Sterling, développeur web. Création et refonte de sites internet pour les entreprises et les particuliers qui veulent être vus et choisis.",
   /** Domaine déclaré dans Plausible. Vide = aucun script d'analytics chargé. */
   plausibleDomain: '',
+  /** Clé Web3Forms (web3forms.com). Vide = le formulaire prépare un email au lieu d'envoyer. */
+  formAccessKey: '',
+  responseDelay: '[délai de réponse : ex. 48 h]',
 };
+
+/**
+ * Tranches de budget du formulaire. Effet de compromis : la tranche du milieu est celle visée,
+ * la tranche haute sert d'ancrage. Ajuster selon les tarifs réels.
+ */
+export const budgets = ["Jusqu'à 1 500 €", '1 500 à 3 500 €', 'Plus de 3 500 €'];
+
+export const projectTypes = ['Création de site', 'Refonte de site', 'Maintenance', 'Autre'];
+
+export const timelines = ['Dès que possible', 'Dans 1 à 3 mois', 'Dans plus de 3 mois', 'Pas de date précise'];
 
 export const nav = [
   { label: 'Projets', href: 'projets/' },

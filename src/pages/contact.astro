@@ -1,0 +1,683 @@
+---
+import Base from '../layouts/Base.astro';
+import { site, budgets, projectTypes, timelines } from '../data/site';
+import { url } from '../lib/url';
+import { isPlaceholder as isPh } from '../lib/projects';
+---
+
+<Base
+  title="Contact"
+  description="Parlez-moi de votre projet de site : création, refonte ou maintenance. Formulaire court, réponse personnelle."
+>
+  <div class="wrap contact" data-clock-end>
+    <section class="intro" id="haut" data-section="Contact" aria-labelledby="page-title">
+      <p class="label">Contact</p>
+      <h1 id="page-title" class="display page-title">On lance la possession&nbsp;?</h1>
+      <p class="lead">
+        Quelques questions pour cadrer votre projet. Je réponds sous <span class:list={{ 'placeholder-text': isPh(site.responseDelay) }}>{site.responseDelay}</span>.
+      </p>
+
+      <div class="direct">
+        <p class="label">En direct</p>
+        <p class="direct-mail"><a href={`mailto:${site.email}`}>{site.email}</a></p>
+        <div class="direct-actions">
+          <button class="copy-btn" type="button" data-copy={site.email}>
+            <span data-copy-label>Copier l'adresse</span>
+          </button>
+          <a class="copy-btn" href={site.linkedin} target="_blank" rel="me noopener">LinkedIn<span class="sr-only"> (nouvel onglet)</span></a>
+        </div>
+        <span class="sr-only" aria-live="polite" data-copy-status></span>
+      </div>
+    </section>
+
+    <section class="form-zone" id="formulaire" data-section="Formulaire" aria-label="Formulaire de contact">
+      <form class="form" data-form data-key={site.formAccessKey} data-email={site.email} novalidate>
+        <p class="form-required muted">Tous les champs sont obligatoires, sauf mention contraire.</p>
+
+        <div class="error-summary" data-summary tabindex="-1" hidden>
+          <p><strong>Il manque quelques infos :</strong></p>
+          <ul role="list" data-summary-list></ul>
+        </div>
+
+        <fieldset class="group">
+          <legend class="group-title"><span class="group-n">01</span>Vous</legend>
+          <div class="row-2">
+            <div class="field">
+              <label for="f-nom">Nom</label>
+              <input id="f-nom" name="nom" type="text" autocomplete="name" required aria-describedby="e-nom" />
+              <p class="err" id="e-nom" hidden>Indiquez votre nom.</p>
+            </div>
+            <div class="field">
+              <label for="f-email">Email</label>
+              <input id="f-email" name="email" type="email" autocomplete="email" inputmode="email" required aria-describedby="e-email" />
+              <p class="err" id="e-email" hidden>Indiquez un email valide, par exemple nom@domaine.fr.</p>
+            </div>
+          </div>
+
+          <fieldset class="field" aria-describedby="e-profil">
+            <legend>Vous êtes</legend>
+            <div class="chips">
+              <label class="chip"><input type="radio" name="profil" value="Entreprise" required /><span>Une entreprise</span></label>
+              <label class="chip"><input type="radio" name="profil" value="Particulier" /><span>Un particulier</span></label>
+            </div>
+            <p class="err" id="e-profil" hidden>Choisissez une option.</p>
+          </fieldset>
+
+          <div class="field">
+            <label for="f-activite">Entreprise ou activité <span class="opt">(facultatif)</span></label>
+            <input id="f-activite" name="activite" type="text" autocomplete="organization" />
+          </div>
+        </fieldset>
+
+        <fieldset class="group">
+          <legend class="group-title"><span class="group-n">02</span>Le projet</legend>
+
+          <fieldset class="field" aria-describedby="e-type">
+            <legend>Type de projet</legend>
+            <div class="chips">
+              {
+                projectTypes.map((t, i) => (
+                  <label class="chip">
+                    <input type="radio" name="type" value={t} required={i === 0} />
+                    <span>{t}</span>
+                  </label>
+                ))
+              }
+            </div>
+            <p class="err" id="e-type" hidden>Choisissez un type de projet.</p>
+          </fieldset>
+
+          <fieldset class="field" aria-describedby="e-budget">
+            <legend>Budget approximatif</legend>
+            <div class="tiers">
+              {
+                budgets.map((b, i) => (
+                  <label class="tier">
+                    <input type="radio" name="budget" value={b} required={i === 0} />
+                    <span class="tier-n label">{String(i + 1).padStart(2, '0')}</span>
+                    <span class="tier-v">{b}</span>
+                  </label>
+                ))
+              }
+            </div>
+            <p class="err" id="e-budget" hidden>Choisissez une tranche, même approximative.</p>
+          </fieldset>
+
+          <div class="field">
+            <label for="f-delai">Délai souhaité</label>
+            <select id="f-delai" name="delai" required aria-describedby="e-delai">
+              <option value="">Choisir</option>
+              {timelines.map((t) => <option value={t}>{t}</option>)}
+            </select>
+            <p class="err" id="e-delai" hidden>Choisissez un délai.</p>
+          </div>
+
+          <div class="field">
+            <label for="f-message">Votre projet en quelques lignes</label>
+            <p class="hint" id="h-message">Votre activité, ce que le site doit faire, les sites que vous aimez.</p>
+            <textarea id="f-message" name="message" rows="6" required minlength="20" aria-describedby="h-message e-message"></textarea>
+            <p class="err" id="e-message" hidden>Écrivez au moins quelques mots (20 caractères).</p>
+          </div>
+        </fieldset>
+
+        <div class="field consent">
+          <label class="check">
+            <input type="checkbox" name="consentement" value="oui" required aria-describedby="e-consent" />
+            <span>
+              J'accepte que ces informations servent uniquement à répondre à ma demande.{' '}
+              <a href={url('confidentialite/')}>Politique de confidentialité</a>
+            </span>
+          </label>
+          <p class="err" id="e-consent" hidden>Cochez cette case pour envoyer votre demande.</p>
+        </div>
+
+        <!-- Piège à robots : invisible pour les humains -->
+        <div class="hp" aria-hidden="true">
+          <label>Ne pas remplir <input type="checkbox" name="botcheck" tabindex="-1" autocomplete="off" /></label>
+        </div>
+
+        <div class="submit-row">
+          <button class="btn btn--led submit" type="submit" data-submit>
+            <span data-submit-label>Envoyer la demande</span>
+            <span aria-hidden="true">→</span>
+          </button>
+          <p class="status" role="status" data-status></p>
+        </div>
+      </form>
+
+      <div class="done" data-done tabindex="-1" hidden>
+        <p class="label">Demande reçue</p>
+        <h2 class="display done-title">Panier.</h2>
+        <p class="lead">
+          Merci, c'est bien arrivé. Je vous réponds sous <span class:list={{ 'placeholder-text': isPh(site.responseDelay) }}>{site.responseDelay}</span>, à l'adresse indiquée.
+        </p>
+        <a class="btn btn--ghost" href={url('projets/')}>En attendant, voir les projets</a>
+      </div>
+
+      <div class="done" data-fallback tabindex="-1" hidden>
+        <p class="label">Dernière étape</p>
+        <h2 class="display done-title">Votre email est prêt.</h2>
+        <p class="lead">
+          Votre messagerie s'est ouverte avec la demande pré-remplie. Si rien ne s'est ouvert, écrivez directement à
+          <strong>{site.email}</strong>.
+        </p>
+        <a class="btn btn--led" data-fallback-link href={`mailto:${site.email}`}>Ouvrir l'email</a>
+      </div>
+    </section>
+  </div>
+</Base>
+
+<script>
+  // Copier l'email
+  document.querySelectorAll<HTMLButtonElement>('.direct [data-copy]').forEach((btn) => {
+    const label = btn.querySelector('[data-copy-label]');
+    const status = document.querySelector('.direct [data-copy-status]');
+    btn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(btn.dataset.copy ?? '');
+        if (label) label.textContent = 'Adresse copiée';
+        if (status) status.textContent = 'Adresse email copiée';
+        setTimeout(() => label && (label.textContent = "Copier l'adresse"), 2400);
+      } catch {
+        if (label) label.textContent = 'Sélectionnez le texte pour copier';
+      }
+    });
+  });
+
+  // Formulaire : validation accessible, puis envoi via Web3Forms (ou email pré-rempli si la clé manque)
+  const form = document.querySelector<HTMLFormElement>('[data-form]')!;
+  const summary = form.querySelector<HTMLElement>('[data-summary]')!;
+  const summaryList = form.querySelector<HTMLUListElement>('[data-summary-list]')!;
+  const status = form.querySelector<HTMLElement>('[data-status]')!;
+  const submit = form.querySelector<HTMLButtonElement>('[data-submit]')!;
+  const submitLabel = form.querySelector<HTMLElement>('[data-submit-label]')!;
+  const done = document.querySelector<HTMLElement>('[data-done]')!;
+  const fallback = document.querySelector<HTMLElement>('[data-fallback]')!;
+
+  const checks: { name: string; err: string; label: string; ok: (f: FormData) => boolean }[] = [
+    { name: 'nom', err: 'e-nom', label: 'Nom', ok: (f) => String(f.get('nom') ?? '').trim().length > 1 },
+    { name: 'email', err: 'e-email', label: 'Email', ok: (f) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(f.get('email') ?? '').trim()) },
+    { name: 'profil', err: 'e-profil', label: 'Vous êtes', ok: (f) => f.has('profil') },
+    { name: 'type', err: 'e-type', label: 'Type de projet', ok: (f) => f.has('type') },
+    { name: 'budget', err: 'e-budget', label: 'Budget', ok: (f) => f.has('budget') },
+    { name: 'delai', err: 'e-delai', label: 'Délai', ok: (f) => Boolean(f.get('delai')) },
+    { name: 'message', err: 'e-message', label: 'Votre projet', ok: (f) => String(f.get('message') ?? '').trim().length >= 20 },
+    { name: 'consentement', err: 'e-consent', label: 'Consentement', ok: (f) => f.has('consentement') },
+  ];
+
+  function setError(name: string, errId: string, bad: boolean) {
+    form.querySelectorAll<HTMLInputElement>(`[name="${name}"]`).forEach((el) => el.toggleAttribute('aria-invalid', bad));
+    const err = document.getElementById(errId);
+    if (err) err.hidden = !bad;
+  }
+
+  function validate() {
+    const data = new FormData(form);
+    const failed = checks.filter((c) => !c.ok(data));
+    checks.forEach((c) => setError(c.name, c.err, failed.includes(c)));
+    return { data, failed };
+  }
+
+  // Une fois une erreur affichée, elle disparaît dès que le champ est corrigé
+  form.addEventListener('input', (e) => {
+    const name = (e.target as HTMLInputElement).name;
+    const c = checks.find((k) => k.name === name);
+    if (c && !document.getElementById(c.err)?.hidden) setError(c.name, c.err, !c.ok(new FormData(form)));
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const { data, failed } = validate();
+
+    if (failed.length) {
+      summaryList.replaceChildren(
+        ...failed.map((c) => {
+          const li = document.createElement('li');
+          const a = document.createElement('a');
+          const target = form.querySelector<HTMLElement>(`[name="${c.name}"]`);
+          a.href = `#${target?.id || 'formulaire'}`;
+          a.textContent = c.label;
+          a.addEventListener('click', (ev) => {
+            ev.preventDefault();
+            target?.focus();
+          });
+          li.append(a);
+          return li;
+        }),
+      );
+      summary.hidden = false;
+      summary.focus();
+      return;
+    }
+    summary.hidden = true;
+    if (data.has('botcheck')) return;
+
+    const fields = {
+      Nom: data.get('nom'),
+      Email: data.get('email'),
+      Profil: data.get('profil'),
+      Activité: data.get('activite') || '(non précisé)',
+      'Type de projet': data.get('type'),
+      Budget: data.get('budget'),
+      Délai: data.get('delai'),
+      Message: data.get('message'),
+    };
+    const key = form.dataset.key;
+
+    // Pas encore de clé : on prépare un email avec la demande
+    if (!key) {
+      const body = Object.entries(fields)
+        .map(([k, v]) => `${k} : ${v}`)
+        .join('\n');
+      const href = `mailto:${form.dataset.email}?subject=${encodeURIComponent(`Demande de projet : ${fields['Type de projet']}`)}&body=${encodeURIComponent(body)}`;
+      fallback.querySelector<HTMLAnchorElement>('[data-fallback-link]')!.href = href;
+      form.hidden = true;
+      fallback.hidden = false;
+      fallback.focus();
+      location.href = href;
+      return;
+    }
+
+    submit.disabled = true;
+    submitLabel.textContent = 'Envoi en cours…';
+    status.textContent = '';
+    try {
+      const res = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          access_key: key,
+          subject: `Nouvelle demande : ${fields['Type de projet']} (${fields.Budget})`,
+          from_name: 'Portfolio Yohann Sterling',
+          replyto: fields.Email,
+          ...fields,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.message);
+      form.hidden = true;
+      done.hidden = false;
+      done.focus();
+    } catch {
+      status.textContent = `L'envoi n'a pas abouti. Réessayez, ou écrivez directement à ${form.dataset.email}.`;
+      submit.disabled = false;
+      submitLabel.textContent = 'Envoyer la demande';
+    }
+  });
+</script>
+
+<style>
+  .contact {
+    display: grid;
+    gap: var(--s-8) var(--gutter);
+    padding-block: clamp(48px, 8vw, 128px) var(--section-pad);
+  }
+
+  @media (min-width: 1024px) {
+    .contact {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      align-items: start;
+    }
+
+    .intro {
+      grid-column: 1 / span 5;
+      position: sticky;
+      top: calc(var(--header-h) + var(--s-6));
+    }
+
+    .form-zone {
+      grid-column: 7 / -1;
+    }
+  }
+
+  .intro {
+    display: grid;
+    gap: var(--s-5);
+  }
+
+  .page-title {
+    font-size: var(--fs-5);
+    line-height: 0.95;
+    text-wrap: balance;
+  }
+
+  .direct {
+    display: grid;
+    gap: var(--s-3);
+    margin-top: var(--s-5);
+    padding-top: var(--s-5);
+    border-top: 1px solid var(--c-ligne);
+  }
+
+  .direct-mail {
+    font-size: var(--fs-1);
+    overflow-wrap: anywhere;
+  }
+
+  .direct-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+  }
+
+  .copy-btn {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 var(--s-4);
+    border: 1px solid var(--c-parquet);
+    border-radius: 999px;
+    background: transparent;
+    font-size: var(--fs--1);
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .copy-btn:hover {
+    border-color: var(--c-craie);
+  }
+
+  /* Formulaire */
+  .form {
+    display: grid;
+    gap: var(--s-7);
+  }
+
+  .form-required {
+    font-size: var(--fs--1);
+  }
+
+  fieldset {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+
+  .group {
+    display: grid;
+    gap: var(--s-5);
+  }
+
+  .group-title {
+    display: flex;
+    align-items: baseline;
+    gap: var(--s-3);
+    margin-bottom: var(--s-5);
+    padding: 0;
+    font-family: var(--f-display);
+    font-weight: 800;
+    font-size: var(--fs-3);
+    text-transform: uppercase;
+  }
+
+  .group-n {
+    font-size: var(--fs-1);
+    color: var(--c-led);
+  }
+
+  .row-2 {
+    display: grid;
+    gap: var(--s-5) var(--gutter);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  }
+
+  .field {
+    display: grid;
+    align-content: start;
+    gap: var(--s-2);
+  }
+
+  .field > label,
+  .field > legend {
+    padding: 0;
+    margin-bottom: var(--s-2);
+    font-weight: 600;
+  }
+
+  .opt,
+  .hint {
+    color: var(--c-parquet);
+    font-weight: 400;
+    font-size: var(--fs--1);
+  }
+
+  input[type='text'],
+  input[type='email'],
+  select,
+  textarea {
+    width: 100%;
+    min-height: 52px;
+    padding: var(--s-3) var(--s-4);
+    border: 1px solid var(--c-parquet);
+    border-radius: 8px;
+    background: var(--c-banc);
+    color: var(--c-craie);
+    font: inherit;
+    transition: border-color var(--t-hover) var(--ease-out);
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  input:hover,
+  select:hover,
+  textarea:hover {
+    border-color: var(--c-craie);
+  }
+
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    border-color: var(--c-craie);
+  }
+
+  [aria-invalid] {
+    border-color: var(--c-led) !important;
+  }
+
+  .err {
+    display: flex;
+    gap: var(--s-2);
+    color: var(--c-led);
+    font-size: var(--fs--1);
+    font-weight: 600;
+  }
+
+  .err::before {
+    content: '!';
+    display: inline-grid;
+    place-items: center;
+    flex: none;
+    width: 1.3em;
+    height: 1.3em;
+    border-radius: 50%;
+    background: var(--c-led);
+    color: var(--c-nuit);
+    font-size: 0.85em;
+  }
+
+  /* Choix en pastilles et tranches de budget */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2);
+  }
+
+  .chip,
+  .tier {
+    position: relative;
+    cursor: pointer;
+  }
+
+  .chip input,
+  .tier input,
+  .check input {
+    position: absolute;
+    opacity: 0;
+    width: 1px;
+    height: 1px;
+  }
+
+  .chip span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 var(--s-4);
+    border: 1px solid var(--c-parquet);
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: var(--fs--1);
+    transition: background-color var(--t-hover) var(--ease-out), color var(--t-hover) var(--ease-out);
+  }
+
+  .chip:hover span {
+    border-color: var(--c-craie);
+  }
+
+  .chip input:checked + span {
+    background: var(--c-craie);
+    border-color: var(--c-craie);
+    color: var(--c-nuit);
+  }
+
+  .chip input:focus-visible + span,
+  .tier input:focus-visible ~ .tier-v,
+  .check input:focus-visible + span::before {
+    outline: var(--focus-ring);
+    outline-offset: 3px;
+  }
+
+  .tiers {
+    display: grid;
+    gap: var(--s-2);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  }
+
+  .tier {
+    display: grid;
+    gap: var(--s-2);
+    padding: var(--s-4);
+    border: 1px solid var(--c-parquet);
+    border-radius: 10px;
+    transition: border-color var(--t-hover) var(--ease-out), background-color var(--t-hover) var(--ease-out);
+  }
+
+  .tier:hover {
+    border-color: var(--c-craie);
+  }
+
+  .tier:has(input:checked) {
+    border-color: var(--c-led);
+    background: color-mix(in srgb, var(--c-led) 10%, transparent);
+  }
+
+  .tier:has(input:checked) .tier-n {
+    color: var(--c-led);
+  }
+
+  .tier-v {
+    font-family: var(--f-display);
+    font-weight: 800;
+    font-size: var(--fs-1);
+    line-height: 1.05;
+    text-transform: uppercase;
+  }
+
+  /* Case de consentement */
+  .field > .check {
+    display: block;
+    margin: 0;
+    font-weight: 400;
+    cursor: pointer;
+  }
+
+  .check span::before {
+    content: '';
+    display: inline-block;
+    flex: none;
+    width: 22px;
+    height: 22px;
+    margin-right: var(--s-3);
+    vertical-align: -5px;
+    border: 1px solid var(--c-parquet);
+    border-radius: 5px;
+  }
+
+  .check input:checked + span::before {
+    background: var(--c-led)
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='%230b0b0c' stroke-width='3'/%3E%3C/svg%3E")
+      center / 80% no-repeat;
+    border-color: var(--c-led);
+  }
+
+  .check a {
+    color: var(--c-craie);
+  }
+
+  .hp {
+    position: absolute;
+    left: -9999px;
+  }
+
+  .error-summary {
+    padding: var(--s-4) var(--s-5);
+    border: 1px solid var(--c-led);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--c-led) 8%, transparent);
+  }
+
+  .error-summary ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-2) var(--s-4);
+    margin-top: var(--s-2);
+  }
+
+  .error-summary a {
+    color: var(--c-craie);
+  }
+
+  .submit-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s-4);
+  }
+
+  .submit {
+    min-height: 56px;
+    font-size: var(--fs-1);
+  }
+
+  .submit:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
+
+  .status {
+    color: var(--c-led);
+    font-weight: 600;
+  }
+
+  /* Confirmation */
+  .done {
+    display: grid;
+    gap: var(--s-5);
+    justify-items: start;
+    padding: var(--s-7) var(--s-6);
+    border: 1px solid var(--c-ligne);
+    border-radius: 12px;
+    background: linear-gradient(180deg, var(--c-banc), var(--c-nuit));
+  }
+
+  .done:focus {
+    outline: none;
+  }
+
+  .done-title {
+    font-size: var(--fs-5);
+  }
+</style>
