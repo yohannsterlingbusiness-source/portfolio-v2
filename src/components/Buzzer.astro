@@ -38,28 +38,30 @@ const rays = Array.from({ length: 28 }, (_, i) => {
 <script>
   import { reducedMotion } from '../scripts/clock';
 
-  // Souris : l'impact frame se joue quand le pointeur entre dans la section (ou au focus clavier).
-  // Tactile : quand le chrono atteint 0.0 (événement clock:zero émis par le Header).
+  // L'impact frame se déclenche quand le chrono atteint 0.0 (événement clock:zero émis par le Header).
+  // Souris : il reste figé tant que le pointeur est dans la section et s'estompe à sa sortie.
+  // Tactile : il s'estompe après 400 ms.
   const el = document.querySelector<HTMLElement>('[data-buzzer]');
-  let last = 0;
+  const mouse = matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-  const impact = () => {
-    // Pause de 1,5 s entre deux impacts : jamais plus d'un flash à la suite
-    if (!el || reducedMotion() || el.classList.contains('is-impact') || Date.now() - last < 1500) return;
-    last = Date.now();
-    el.classList.add('is-impact');
-    setTimeout(() => el.classList.remove('is-impact'), 400);
-  };
+  if (el) {
+    let minUntil = 0;
 
-  if (el && matchMedia('(hover: hover) and (pointer: fine)').matches) {
-    el.addEventListener('pointerenter', (e) => e.pointerType === 'mouse' && impact());
-    el.addEventListener('focusin', (e) => {
-      if (!el.contains(e.relatedTarget as Node)) impact();
+    const release = () => {
+      const wait = minUntil - Date.now();
+      if (wait > 0) return setTimeout(release, wait);
+      if (mouse && el.matches(':hover')) return;
+      el.classList.remove('is-impact');
+    };
+
+    document.addEventListener('clock:zero', () => {
+      if (reducedMotion() || el.classList.contains('is-impact')) return;
+      minUntil = Date.now() + 400;
+      el.classList.add('is-impact');
+      setTimeout(release, 400);
     });
-  } else if (document.documentElement.dataset.clockZero) {
-    impact();
-  } else {
-    document.addEventListener('clock:zero', impact, { once: true });
+
+    el.addEventListener('pointerleave', () => el.classList.contains('is-impact') && release());
   }
 </script>
 
