@@ -25,18 +25,40 @@ export const services = [
     n: '01',
     title: 'Création de site internet',
     text: "Votre activité n'a pas encore de site, ou rien qui vous ressemble. On part de zéro, proprement.",
+    delay: '[Délai indicatif : ex. 3 à 5 semaines]',
   },
   {
     n: '02',
     title: 'Refonte de site internet',
     text: 'Votre site existe mais ne convainc plus. On garde ce qui marche, on reconstruit le reste.',
+    delay: '[Délai indicatif : ex. 2 à 4 semaines]',
   },
   {
     n: '03',
     title: 'Maintenance',
     text: 'Mises à jour, sauvegardes, sécurité et petites modifications. Votre site reste en forme après la livraison.',
+    delay: 'Forfait mensuel ou annuel',
   },
 ];
+
+/** Conditions reprises dans l'offre et la FAQ. Valeurs entre crochets à fixer. */
+export const terms = {
+  deposit: '[30 à 50 %]',
+  rounds: '[N]',
+  bugfixDays: '[15 à 30]',
+  maintenanceHours: '[N h]',
+};
+
+export const included = [
+  'Un site adapté à tous les écrans',
+  'Le SEO de base : structure, titres, descriptions, vitesse',
+  'Formulaires de contact',
+  "Mesure d'audience respectueuse de la vie privée",
+  'Une prise en main pour modifier vos contenus',
+  `Corrections de bugs pendant ${terms.bugfixDays} jours après la mise en ligne`,
+];
+
+export const notIncluded = ['Rédaction des textes', 'Photos', 'SEO avancé'];
 
 export const quarters = [
   { q: 'Q1', title: 'Cadrage', text: 'Questionnaire, appel découverte, devis détaillé, acompte.' },

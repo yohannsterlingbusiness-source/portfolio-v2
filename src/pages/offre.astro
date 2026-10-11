@@ -1,0 +1,408 @@
+---
+import Base from '../layouts/Base.astro';
+import Quarters from '../components/Quarters.astro';
+import CtaBlock from '../components/CtaBlock.astro';
+import { services, terms, included, notIncluded } from '../data/site';
+import { isPlaceholder as isPh } from '../lib/projects';
+
+const audiences = [
+  {
+    title: 'Entreprises',
+    points: [
+      'Devis détaillé et facture avec TVA',
+      'Plusieurs interlocuteurs pour valider, si besoin',
+      'Un cadre clair du premier appel à la mise en ligne',
+    ],
+  },
+  {
+    title: 'Particuliers',
+    points: ['Un forfait simple et rapide', 'Sans jargon', 'Vous savez ce qui est inclus avant de signer'],
+  },
+];
+
+const faq = [
+  {
+    q: 'Mes contenus arrivent en retard, que se passe-t-il ?',
+    a: "La date de livraison se décale d'autant. C'est écrit dans le devis, pour que personne ne soit surpris.",
+  },
+  {
+    q: 'Combien de retours sont inclus ?',
+    a: `${terms.rounds} allers-retours, fixés dans le devis. Vous regroupez vos retours en une fois, je corrige, vous validez par écrit.`,
+  },
+  {
+    q: 'Faut-il verser un acompte ?',
+    a: `Oui, ${terms.deposit} à la signature du devis. Le travail démarre à ce moment-là.`,
+  },
+  {
+    q: 'Et après la mise en ligne ?',
+    a: `Vous recevez les accès, la documentation et une prise en main. Les bugs sont corrigés pendant ${terms.bugfixDays} jours. Ensuite, la maintenance prend le relais si vous le souhaitez.`,
+  },
+  {
+    q: 'Que comprend la maintenance ?',
+    a: `Mises à jour, sauvegardes, sécurité, hébergement et ${terms.maintenanceHours} de modifications, au mois ou à l'année. Je la propose dès le devis.`,
+  },
+  {
+    q: 'Je suis un particulier, est-ce pour moi ?',
+    a: 'Oui. Pour un particulier, je propose un forfait simple, avec un périmètre clair et un prix fixe.',
+  },
+];
+
+// Rend visibles les valeurs à compléter (entre crochets)
+const mark = (text: string) =>
+  text.replace(/(\[[^\]]+\])/g, '<span class="placeholder-text">$1</span>');
+---
+
+<Base
+  title="Offre"
+  description="Création et refonte de sites internet pour les entreprises et les particuliers, maintenance comprise si vous le souhaitez. Un processus clair, validé par écrit."
+>
+  <section class="wrap page-head" id="haut" data-section="Offre" aria-labelledby="page-title">
+    <p class="label">Offre</p>
+    <h1 id="page-title" class="display page-title">Création de présence en ligne</h1>
+    <p class="lead">Je crée des sites qui rendent votre activité visible, et je les fais durer après la mise en ligne.</p>
+  </section>
+
+  <section class="section" id="pour-qui" data-section="Pour qui" aria-labelledby="t-pour-qui">
+    <div class="wrap">
+      <h2 id="t-pour-qui" class="h-section">Pour qui</h2>
+      <div class="audiences">
+        {
+          audiences.map((a) => (
+            <article class="audience">
+              <h3 class="audience-title display">{a.title}</h3>
+              <ul role="list">
+                {a.points.map((p) => (
+                  <li>{p}</li>
+                ))}
+              </ul>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="services" data-section="Services" aria-labelledby="t-services">
+    <div class="wrap">
+      <h2 id="t-services" class="h-section">Services</h2>
+      <ol role="list" class="services">
+        {
+          services.map((s) => (
+            <li class="service">
+              <span class="service-n label">{s.n}</span>
+              <h3 class="service-title display">{s.title}</h3>
+              <p class="service-text muted">{s.text}</p>
+              <p class:list={['service-delay', { 'placeholder-text': isPh(s.delay) }]}>{s.delay}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+  </section>
+
+  <section class="section" id="match" data-section="Le match" aria-labelledby="t-match">
+    <div class="wrap">
+      <div class="section-head">
+        <h2 id="t-match" class="h-section">Le match</h2>
+        <p class="muted intro">Quatre quart-temps, une prolongation si vous la voulez. Tout est validé par écrit.</p>
+      </div>
+      <Quarters />
+    </div>
+  </section>
+
+  <section class="section" id="inclus" data-section="Inclus" aria-labelledby="t-inclus">
+    <div class="wrap">
+      <h2 id="t-inclus" class="h-section">Ce qui est inclus</h2>
+      <div class="scope">
+        <div class="scope-col">
+          <h3 class="label">Inclus</h3>
+          <ul role="list" class="scope-list is-in">
+            {included.map((i) => <li set:html={`<span>${mark(i)}</span>`} />)}
+          </ul>
+        </div>
+        <div class="scope-col">
+          <h3 class="label">En supplément</h3>
+          <ul role="list" class="scope-list is-out">
+            {notIncluded.map((i) => <li>{i}</li>)}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="faq" data-section="Questions" aria-labelledby="t-faq">
+    <div class="wrap faq-wrap">
+      <h2 id="t-faq" class="h-section">Questions</h2>
+      <div class="faq">
+        {
+          faq.map((f) => (
+            <details class="faq-item">
+              <summary>
+                <span>{f.q}</span>
+                <span class="faq-icon" aria-hidden="true" />
+              </summary>
+              <p class="faq-a" set:html={mark(f.a)} />
+            </details>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <CtaBlock title="On en parle ?" text="Un message suffit pour démarrer : je vous réponds avec les bonnes questions." />
+</Base>
+
+<style>
+  .page-head {
+    display: grid;
+    gap: var(--s-5);
+    padding-block: clamp(48px, 8vw, 128px) var(--section-pad);
+  }
+
+  .page-title {
+    font-size: var(--fs-6);
+    max-width: 12ch;
+    text-wrap: balance;
+  }
+
+  .h-section {
+    margin-bottom: var(--s-7);
+  }
+
+  .section-head .h-section {
+    margin-bottom: 0;
+  }
+
+  .intro {
+    max-width: 36ch;
+  }
+
+  /* Pour qui */
+  .audiences {
+    display: grid;
+    gap: var(--gutter);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  }
+
+  .audience {
+    display: grid;
+    align-content: start;
+    gap: var(--s-5);
+    padding: var(--s-6);
+    border: 1px solid var(--c-ligne);
+    border-radius: 10px;
+    background: linear-gradient(180deg, var(--c-banc), var(--c-nuit));
+  }
+
+  .audience-title {
+    font-size: var(--fs-4);
+  }
+
+  .audience ul {
+    display: grid;
+    gap: var(--s-3);
+  }
+
+  .audience li {
+    padding-left: var(--s-5);
+    position: relative;
+  }
+
+  .audience li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.6em;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--c-led);
+  }
+
+  /* Services */
+  .services {
+    border-top: 1px solid var(--c-ligne);
+  }
+
+  .service {
+    display: grid;
+    grid-template-columns: 3rem 1fr;
+    gap: var(--s-2) var(--s-4);
+    padding-block: var(--s-6);
+    border-bottom: 1px solid var(--c-ligne);
+  }
+
+  .service-n {
+    padding-top: 0.5em;
+  }
+
+  .service-title {
+    font-size: var(--fs-4);
+  }
+
+  .service-text,
+  .service-delay {
+    grid-column: 2;
+    max-width: var(--measure);
+  }
+
+  .service-delay {
+    font-size: var(--fs--1);
+    font-weight: 600;
+  }
+
+  @media (min-width: 1024px) {
+    .service {
+      grid-template-columns: 3rem minmax(0, 5fr) minmax(0, 4fr) minmax(0, 2fr);
+      align-items: baseline;
+    }
+
+    .service-text {
+      grid-column: 3;
+    }
+
+    .service-delay {
+      grid-column: 4;
+      text-align: right;
+    }
+  }
+
+  /* Inclus / en supplément */
+  .scope {
+    display: grid;
+    gap: var(--s-7) var(--gutter);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  }
+
+  .scope-col {
+    display: grid;
+    align-content: start;
+    gap: var(--s-4);
+  }
+
+  .scope-list {
+    border-top: 1px solid var(--c-ligne);
+  }
+
+  .scope-list li {
+    display: flex;
+    gap: var(--s-4);
+    padding-block: var(--s-4);
+    border-bottom: 1px solid var(--c-ligne);
+  }
+
+  .scope-list li::before {
+    flex: none;
+    width: 1.2em;
+    font-weight: 700;
+  }
+
+  .scope-list.is-in li::before {
+    content: '✓';
+    color: var(--c-led);
+  }
+
+  .scope-list.is-out li {
+    color: var(--c-parquet);
+  }
+
+  .scope-list.is-out li::before {
+    content: '+';
+  }
+
+  /* FAQ */
+  .faq {
+    border-top: 1px solid var(--c-ligne);
+  }
+
+  .faq-item {
+    border-bottom: 1px solid var(--c-ligne);
+  }
+
+  .faq-item summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-5);
+    min-height: 64px;
+    padding-block: var(--s-4);
+    font-size: var(--fs-1);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .faq-item summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .faq-item summary:hover {
+    color: var(--c-led);
+  }
+
+  .faq-icon {
+    position: relative;
+    flex: none;
+    width: 18px;
+    height: 18px;
+  }
+
+  .faq-icon::before,
+  .faq-icon::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 18px;
+    height: 2px;
+    background: currentColor;
+    transition: transform var(--t-base) var(--ease-cross);
+  }
+
+  .faq-icon::after {
+    transform: rotate(90deg);
+  }
+
+  .faq-item[open] .faq-icon::after {
+    transform: rotate(0deg);
+  }
+
+  .faq-a {
+    max-width: var(--measure);
+    padding-bottom: var(--s-5);
+    color: var(--c-parquet);
+  }
+
+  /* Ouverture fluide là où le navigateur sait animer la hauteur automatique */
+  @supports (interpolate-size: allow-keywords) {
+    .faq {
+      interpolate-size: allow-keywords;
+    }
+
+    .faq-item::details-content {
+      height: 0;
+      overflow: clip;
+      transition: height var(--t-base) var(--ease-out), content-visibility var(--t-base) allow-discrete;
+    }
+
+    .faq-item[open]::details-content {
+      height: auto;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .faq-wrap {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      column-gap: var(--gutter);
+    }
+
+    .faq-wrap .h-section {
+      grid-column: 1 / span 4;
+    }
+
+    .faq {
+      grid-column: 6 / -1;
+    }
+  }
+</style>
