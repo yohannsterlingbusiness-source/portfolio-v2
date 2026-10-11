@@ -1,6 +1,7 @@
 ---
 // Schéma tactique de la démarche : une étape = un joueur, une flèche = une passe, le dernier trait = le tir.
-// Le schéma se trace au fil du scroll. Sans JS ou en mouvement réduit, il est affiché complet.
+// Le schéma se trace à son arrivée en descendant et se défait en remontant.
+// Sans JS ou en mouvement réduit, il est affiché complet.
 interface Props {
   steps: string[];
 }
@@ -88,9 +89,11 @@ const shot = `M${last.x} ${last.y - 22} Q${shotCtrl.x} ${shotCtrl.y} ${HOOP.x} $
 <script>
   import { reducedMotion } from '../scripts/clock';
 
-  // Le schéma suit le scroll : il se trace en descendant et se défait en remontant.
+  // En descendant, quand le haut du schéma passe la ligne des 75 % de l'écran, il se trace en entier.
+  // En remontant, quand il repasse sous cette ligne, il se défait en sens inverse.
   // Étape i : le joueur apparaît, puis sa passe (ou le tir pour la dernière) se dessine.
   const clamp = (v: number) => Math.min(1, Math.max(0, v));
+  const STEP_MS = 450;
 
   document.querySelectorAll<HTMLElement>('[data-playbook]').forEach((el) => {
     if (reducedMotion()) return;
@@ -99,14 +102,11 @@ const shot = `M${last.x} ${last.y - 22} Q${shotCtrl.x} ${shotCtrl.y} ${HOOP.x} $
     const passes = el.querySelectorAll<SVGGElement>('[data-pass]');
     const steps = el.querySelectorAll<HTMLElement>('[data-step]');
     const n = nodes.length;
-    let ticking = false;
+    let progress = 0;
+    let frame = 0;
 
-    function draw() {
-      ticking = false;
-      const r = svg.getBoundingClientRect();
-      const vh = innerHeight;
-      // Début : haut du schéma à 85 % de l'écran. Fin : bas du schéma à 45 %.
-      const p = clamp((vh * 0.85 - r.top) / (vh * 0.4 + r.height));
+    function draw(p: number) {
+      progress = p;
       const t = p * n;
       nodes.forEach((node, i) => {
         const k = clamp((t - i) / 0.3);
@@ -123,27 +123,35 @@ const shot = `M${last.x} ${last.y - 22} Q${shotCtrl.x} ${shotCtrl.y} ${HOOP.x} $
       });
     }
 
-    const request = () => {
-      if (!ticking) {
-        ticking = true;
-        requestAnimationFrame(draw);
-      }
-    };
+    // Joue la progression jusqu'à la cible (1 = tracé complet, 0 = vide), à vitesse constante
+    function playTo(target: number) {
+      cancelAnimationFrame(frame);
+      const from = progress;
+      const duration = Math.abs(target - from) * n * STEP_MS;
+      if (!duration) return;
+      const start = performance.now();
+      const tick = (now: number) => {
+        const k = clamp((now - start) / duration);
+        draw(from + (target - from) * k);
+        if (k < 1) frame = requestAnimationFrame(tick);
+      };
+      frame = requestAnimationFrame(tick);
+    }
 
     el.classList.add('is-scrub');
-    draw();
-    // N'écoute le scroll que lorsque le schéma est proche de l'écran
-    new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        addEventListener('scroll', request, { passive: true });
-        addEventListener('resize', request, { passive: true });
-        request();
-      } else {
-        removeEventListener('scroll', request);
-        removeEventListener('resize', request);
-        request();
-      }
-    }).observe(el);
+    draw(0);
+    let first = true;
+    new IntersectionObserver(
+      ([entry]) => {
+        const below = entry.boundingClientRect.top > 0;
+        if (entry.isIntersecting) playTo(1);
+        else if (below) playTo(0);
+        // Page chargée plus bas que le schéma : on l'affiche déjà tracé
+        else if (first) draw(1);
+        first = false;
+      },
+      { rootMargin: '0px 0px -25% 0px' },
+    ).observe(svg);
   });
 </script>
 
