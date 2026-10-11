@@ -5,14 +5,21 @@ interface Props {
   zone?: 'key' | 'corner' | 'arc' | 'center';
   number: string;
   placeholder?: boolean;
+  /** Format du cadre, ex. "21 / 9". Le dessin est recadré pour le remplir. */
+  ratio?: string;
 }
 
-const { angle = 0, zone = 'key', number, placeholder = true } = Astro.props;
+const { angle = 0, zone = 'key', number, placeholder = true, ratio = '16 / 10' } = Astro.props;
 const t = `translate(200 125) rotate(${angle}) scale(1.3) translate(-200 -125)`;
 ---
 
-<div class="visual">
-  <svg viewBox="0 0 400 250" role="img" aria-label={placeholder ? `Visuel à venir pour le projet ${number}` : `Visuel du projet ${number}`}>
+<div class="visual" style={`aspect-ratio: ${ratio}`}>
+  <svg
+    viewBox="0 0 400 250"
+    preserveAspectRatio="xMidYMid slice"
+    role="img"
+    aria-label={placeholder ? `Visuel à venir pour le projet ${number}` : `Visuel du projet ${number}`}
+  >
     <rect width="400" height="250" class="v-bg"></rect>
     <text x="392" y="236" text-anchor="end" class="v-num">{number}</text>
     <g transform={t}>
@@ -37,7 +44,6 @@ const t = `translate(200 125) rotate(${angle}) scale(1.3) translate(-200 -125)`;
 <style>
   .visual {
     position: relative;
-    aspect-ratio: 16 / 10;
     overflow: hidden;
     border-radius: 6px;
   }

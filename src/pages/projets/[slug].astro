@@ -1,0 +1,321 @@
+---
+// Gabarit d'étude de cas : une page par fichier de src/content/projets/.
+import { render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import ProjectVisual from '../../components/ProjectVisual.astro';
+import Playbook from '../../components/Playbook.astro';
+import CtaBlock from '../../components/CtaBlock.astro';
+import { getProjects, isPlaceholder as isPh } from '../../lib/projects';
+import { url } from '../../lib/url';
+
+export async function getStaticPaths() {
+  const projects = await getProjects();
+  return projects.map((project, i) => ({
+    params: { slug: project.id },
+    props: { project, next: projects[(i + 1) % projects.length] },
+  }));
+}
+
+const { project, next } = Astro.props;
+const { data } = project;
+const { Content } = await render(project);
+const hasBody = Boolean(project.body?.trim());
+
+const kicker = data.pinned ? 'Étude de cas' : `Projet ${data.number} · ${data.client}`;
+const nextLabel = next.data.pinned ? next.data.title : `Projet ${next.data.number} · ${next.data.title}`;
+const description = isPh(data.problem)
+  ? `Étude de cas ${data.pinned ? 'du portfolio' : `du projet ${data.number}`} de Yohann Sterling, développeur web.`
+  : data.problem;
+---
+
+<Base title={isPh(data.title) ? `Projet ${data.number}` : data.title} description={description}>
+  <article>
+    <header class="wrap cs-head" id="haut" data-section="Fiche">
+      <a class="back" href={url('projets/')}>← Tous les projets</a>
+      <p class="label">{kicker}</p>
+      <h1 class:list={['display cs-title', { 'placeholder-text': isPh(data.title) }]}>{data.title}</h1>
+      <dl class="cs-meta">
+        <div>
+          <dt class="label">Type</dt>
+          <dd class:list={{ 'placeholder-text': isPh(data.type) }}>{data.type}</dd>
+        </div>
+        <div>
+          <dt class="label">Année</dt>
+          <dd class:list={{ 'placeholder-text': isPh(data.year) }}>{data.year}</dd>
+        </div>
+        <div>
+          <dt class="label">Mon rôle</dt>
+          <dd>
+            <ul role="list">
+              {data.role.map((r) => <li class:list={{ 'placeholder-text': isPh(r) }}>{r}</li>)}
+            </ul>
+          </dd>
+        </div>
+      </dl>
+    </header>
+
+    <div class="wrap">
+      <ProjectVisual
+        angle={data.visual.angle}
+        zone={data.visual.zone}
+        number={data.number}
+        placeholder={data.placeholder}
+        ratio="21 / 9"
+      />
+
+      <dl class="box" aria-label="Box score du projet">
+        {
+          data.stats.map((s) => (
+            <div class="box-cell">
+              <dt class="label">{s.label}</dt>
+              <dd class:list={['box-val display', { 'is-ph': isPh(s.value) }]}>{s.value}</dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+
+    <section class="wrap cs-row" id="probleme" data-section="Le problème" aria-labelledby="t-probleme">
+      <h2 id="t-probleme" class="cs-h">Le problème</h2>
+      <p class:list={['cs-text lead', { 'placeholder-text': isPh(data.problem) }]}>{data.problem}</p>
+    </section>
+
+    <section class="wrap cs-row" id="demarche" data-section="La démarche" aria-labelledby="t-demarche">
+      <h2 id="t-demarche" class="cs-h">La démarche</h2>
+      <div class="cs-wide">
+        <Playbook steps={data.approach} />
+      </div>
+    </section>
+
+    <section class="wrap cs-row" id="solution" data-section="La solution" aria-labelledby="t-solution">
+      <h2 id="t-solution" class="cs-h">La solution</h2>
+      <div class="cs-text">
+        <p class:list={['lead', { 'placeholder-text': isPh(data.solution) }]}>{data.solution}</p>
+        {
+          data.placeholder && (
+            <div class="cs-shots">
+              <ProjectVisual angle={data.visual.angle + 30} zone={data.visual.zone} number={data.number} />
+              <ProjectVisual angle={data.visual.angle - 30} zone={data.visual.zone} number={data.number} />
+            </div>
+          )
+        }
+      </div>
+    </section>
+
+    {
+      hasBody && (
+        <section class="wrap cs-row" id="coulisses" data-section="Coulisses" aria-labelledby="t-coulisses">
+          <h2 id="t-coulisses" class="cs-h">Coulisses</h2>
+          <div class="cs-text prose">
+            <Content />
+          </div>
+        </section>
+      )
+    }
+
+    <section class="wrap cs-row" id="resultat" data-section="Le résultat" aria-labelledby="t-resultat">
+      <h2 id="t-resultat" class="cs-h">Le résultat</h2>
+      <div class="cs-text">
+        <p class:list={['result-val display', { 'is-ph': isPh(data.result.value) }]}>{data.result.value}</p>
+        <p class:list={['result-label', { 'placeholder-text': isPh(data.result.label) }]}>{data.result.label}</p>
+        <p class:list={['label result-src', { 'placeholder-text': isPh(data.result.source) }]}>Source : {data.result.source}</p>
+      </div>
+    </section>
+
+    <nav class="wrap next" aria-label="Projet suivant">
+      <a class="next-link" href={url(`projets/${next.id}/`)}>
+        <span class="label">Prochaine possession</span>
+        <span class="next-title display">{nextLabel} →</span>
+      </a>
+    </nav>
+  </article>
+
+  <CtaBlock title="Votre projet pourrait être le prochain." text="Création ou refonte : parlons-en." />
+</Base>
+
+<style>
+  .cs-head {
+    display: grid;
+    gap: var(--s-5);
+    padding-block: clamp(32px, 6vw, 96px) var(--s-7);
+  }
+
+  .back {
+    justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--c-parquet);
+  }
+
+  .back:hover {
+    color: var(--c-craie);
+  }
+
+  .cs-title {
+    font-size: var(--fs-6);
+    line-height: 0.95;
+    text-wrap: balance;
+  }
+
+  .cs-title.placeholder-text {
+    font-style: normal;
+  }
+
+  .cs-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s-5) var(--s-8);
+    margin-top: var(--s-3);
+  }
+
+  .cs-meta dd {
+    margin-top: var(--s-1);
+  }
+
+  /* Box score */
+  .box {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: var(--s-6);
+    border-top: 1px solid var(--c-ligne);
+  }
+
+  .box-cell {
+    padding: var(--s-4) var(--s-3) var(--s-4) 0;
+    border-bottom: 1px solid var(--c-ligne);
+  }
+
+  .box-val {
+    margin-top: var(--s-2);
+    font-size: var(--fs-4);
+    overflow-wrap: anywhere;
+  }
+
+  .box-val.is-ph,
+  .result-val.is-ph {
+    font-family: var(--f-text);
+    font-weight: 500;
+    font-style: italic;
+    text-transform: none;
+    font-size: var(--fs-1);
+    color: var(--c-parquet);
+  }
+
+  @media (min-width: 768px) {
+    .box {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  /* Sections : titre à gauche, contenu à droite */
+  .cs-row {
+    display: grid;
+    gap: var(--s-5) var(--gutter);
+    padding-block: var(--s-9);
+    border-bottom: 1px solid var(--c-ligne);
+  }
+
+  .cs-h {
+    font-family: var(--f-display);
+    font-weight: 800;
+    font-size: var(--fs-3);
+    line-height: var(--lh-title);
+    text-transform: uppercase;
+  }
+
+  .cs-text {
+    display: grid;
+    gap: var(--s-5);
+    align-content: start;
+  }
+
+  .cs-text.lead,
+  .cs-text .lead {
+    max-width: 44ch;
+  }
+
+  .cs-shots {
+    display: grid;
+    gap: var(--gutter);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+    margin-top: var(--s-4);
+  }
+
+  @media (min-width: 1024px) {
+    .cs-row {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+
+    .cs-h {
+      grid-column: 1 / span 4;
+    }
+
+    .cs-text {
+      grid-column: 6 / -1;
+    }
+
+    .cs-wide {
+      grid-column: 1 / -1;
+    }
+  }
+
+  /* Résultat */
+  .result-val {
+    font-size: var(--fs-6);
+    color: var(--c-led);
+  }
+
+  .result-label {
+    font-size: var(--fs-1);
+  }
+
+  /* Contenu Markdown (coulisses) */
+  .prose :global(h3) {
+    margin-top: var(--s-5);
+    font-size: var(--fs-1);
+    font-weight: 600;
+  }
+
+  .prose :global(p),
+  .prose :global(li) {
+    max-width: var(--measure);
+    color: var(--c-craie);
+  }
+
+  .prose :global(ul) {
+    display: grid;
+    gap: var(--s-2);
+    padding-left: 1.2em;
+  }
+
+  .prose :global(code) {
+    font-size: 0.9em;
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    background: var(--c-banc);
+  }
+
+  /* Projet suivant */
+  .next {
+    padding-block: var(--s-9);
+  }
+
+  .next-link {
+    display: grid;
+    gap: var(--s-3);
+    text-decoration: none;
+  }
+
+  .next-title {
+    font-size: var(--fs-5);
+    transition: color var(--t-hover) var(--ease-out);
+  }
+
+  .next-link:hover .next-title,
+  .next-link:focus-visible .next-title {
+    color: var(--c-led);
+  }
+</style>
