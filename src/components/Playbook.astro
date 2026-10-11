@@ -1,6 +1,6 @@
 ---
 // Schéma tactique de la démarche : une étape = un joueur, une flèche = une passe, le dernier trait = le tir.
-// Le schéma se trace quand il arrive à l'écran. Sans JS ou en mouvement réduit, il est affiché complet.
+// Le schéma se trace au fil du scroll. Sans JS ou en mouvement réduit, il est affiché complet.
 interface Props {
   steps: string[];
 }
@@ -50,18 +50,20 @@ const shot = `M${last.x} ${last.y - 22} Q${shotCtrl.x} ${shotCtrl.y} ${HOOP.x} $
 
     {
       passes.map((p, i) => (
-        <g class="pb-pass" style={`--i:${i}`}>
+        <g class="pb-pass" data-pass>
           <path d={p.d} pathLength="1" />
           <polygon points="0,0 -11,-6 -11,6" transform={p.head} />
         </g>
       ))
     }
 
-    <path class="pb-shot" style={`--i:${n - 1}`} d={shot} pathLength="1"></path>
+    <g class="pb-pass pb-shot" data-pass>
+      <path d={shot} pathLength="1"></path>
+    </g>
 
     {
       nodes.map((p, i) => (
-        <g class="pb-node" style={`--i:${i}`}>
+        <g class="pb-node" data-node>
           <circle cx={p.x} cy={p.y} r="22" />
           <text x={p.x} y={p.y + 8} text-anchor="middle">
             {i + 1}
@@ -74,7 +76,7 @@ const shot = `M${last.x} ${last.y - 22} Q${shotCtrl.x} ${shotCtrl.y} ${HOOP.x} $
   <ol class="pb-steps" role="list">
     {
       steps.map((s, i) => (
-        <li>
+        <li data-step>
           <span class="pb-n display">{String(i + 1).padStart(2, '0')}</span>
           <span class:list={{ 'placeholder-text': s.startsWith('[') }}>{s}</span>
         </li>
@@ -86,18 +88,62 @@ const shot = `M${last.x} ${last.y - 22} Q${shotCtrl.x} ${shotCtrl.y} ${HOOP.x} $
 <script>
   import { reducedMotion } from '../scripts/clock';
 
+  // Le schéma suit le scroll : il se trace en descendant et se défait en remontant.
+  // Étape i : le joueur apparaît, puis sa passe (ou le tir pour la dernière) se dessine.
+  const clamp = (v: number) => Math.min(1, Math.max(0, v));
+
   document.querySelectorAll<HTMLElement>('[data-playbook]').forEach((el) => {
     if (reducedMotion()) return;
-    el.classList.add('will-draw');
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) return;
-        el.classList.add('is-drawn');
-        io.disconnect();
-      },
-      { threshold: 0.4 },
-    );
-    io.observe(el);
+    const svg = el.querySelector('svg')!;
+    const nodes = el.querySelectorAll<SVGGElement>('[data-node]');
+    const passes = el.querySelectorAll<SVGGElement>('[data-pass]');
+    const steps = el.querySelectorAll<HTMLElement>('[data-step]');
+    const n = nodes.length;
+    let ticking = false;
+
+    function draw() {
+      ticking = false;
+      const r = svg.getBoundingClientRect();
+      const vh = innerHeight;
+      // Début : haut du schéma à 85 % de l'écran. Fin : bas du schéma à 60 %.
+      const p = clamp((vh * 0.85 - r.top) / (vh * 0.25 + r.height));
+      const t = p * n;
+      nodes.forEach((node, i) => {
+        const k = clamp((t - i) / 0.3);
+        node.style.opacity = String(k);
+        node.style.transform = `scale(${0.6 + 0.4 * k})`;
+        steps[i]?.classList.toggle('is-on', k > 0.5);
+      });
+      passes.forEach((pass, i) => {
+        const k = clamp((t - i - 0.3) / 0.7);
+        const path = pass.querySelector('path');
+        if (path) path.style.strokeDashoffset = String(1 - k);
+        const head = pass.querySelector('polygon');
+        if (head) head.style.opacity = k > 0.97 ? '1' : '0';
+      });
+    }
+
+    const request = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(draw);
+      }
+    };
+
+    el.classList.add('is-scrub');
+    draw();
+    // N'écoute le scroll que lorsque le schéma est proche de l'écran
+    new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        addEventListener('scroll', request, { passive: true });
+        addEventListener('resize', request, { passive: true });
+        request();
+      } else {
+        removeEventListener('scroll', request);
+        removeEventListener('resize', request);
+        request();
+      }
+    }).observe(el);
   });
 </script>
 
@@ -138,11 +184,9 @@ const shot = `M${last.x} ${last.y - 22} Q${shotCtrl.x} ${shotCtrl.y} ${HOOP.x} $
     fill: var(--c-craie);
   }
 
-  .pb-shot {
-    fill: none;
+  .pb-shot path {
     stroke: var(--c-led);
     stroke-width: 3;
-    stroke-linecap: round;
   }
 
   .pb-node circle {
@@ -158,42 +202,32 @@ const shot = `M${last.x} ${last.y - 22} Q${shotCtrl.x} ${shotCtrl.y} ${HOOP.x} $
     fill: var(--c-craie);
   }
 
-  /* Tracé séquentiel : chaque étape apparaît, puis sa passe se dessine vers la suivante */
-  .will-draw .pb-node {
-    opacity: 0;
+  /* Tracé piloté par le scroll : le script règle opacité, échelle et longueur dessinée */
+  .is-scrub .pb-node {
     transform-box: fill-box;
     transform-origin: center;
-    transform: scale(0.6);
   }
 
-  .will-draw .pb-pass path,
-  .will-draw .pb-shot {
+  .is-scrub .pb-pass path {
     stroke-dasharray: 1;
-    stroke-dashoffset: 1;
   }
 
-  .will-draw .pb-pass polygon {
-    opacity: 0;
+  .is-scrub .pb-steps li {
+    color: var(--c-parquet);
+    transition: color var(--t-hover) var(--ease-out);
   }
 
-  .is-drawn .pb-node {
-    opacity: 1;
-    transform: none;
-    transition: opacity 200ms var(--ease-out), transform 300ms var(--ease-out);
-    transition-delay: calc(var(--i) * 420ms);
+  .is-scrub .pb-steps li .pb-n {
+    color: var(--c-parquet);
+    transition: color var(--t-hover) var(--ease-out);
   }
 
-  .is-drawn .pb-pass path,
-  .is-drawn .pb-shot {
-    stroke-dashoffset: 0;
-    transition: stroke-dashoffset 380ms var(--ease-inout);
-    transition-delay: calc(var(--i) * 420ms + 180ms);
+  .is-scrub .pb-steps li.is-on {
+    color: var(--c-craie);
   }
 
-  .is-drawn .pb-pass polygon {
-    opacity: 1;
-    transition: opacity 120ms linear;
-    transition-delay: calc(var(--i) * 420ms + 520ms);
+  .is-scrub .pb-steps li.is-on .pb-n {
+    color: var(--c-led);
   }
 
   .pb-steps {
